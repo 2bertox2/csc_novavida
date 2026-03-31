@@ -9,7 +9,7 @@ app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Configuração do PostgreSQL em Nuvem (Neon/Supabase)
-const connectionString = process.env.DATABASE_URL || 'COLE_AQUI_A_URL_DO_SEU_BANCO_POSTGRESQL';
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_jpUhIyC2Bi7O@ep-red-truth-acfzcveg-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
 const pool = new Pool({
     connectionString: connectionString,
