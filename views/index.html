@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GLPI Live</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(26, 26, 46, 0.85), rgba(26, 26, 46, 0.9)),
+                        url(/public/img/fundo-igreja.jpeg);
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-container {
+            background-color: rgba(22, 33, 62, 0.95);
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            width: 90%; 
+            max-width: 400px;
+            text-align: center;
+            backdrop-filter: blur(5px); 
+        }
+
+        .login-logo {
+            max-width: 180px; 
+            height: auto;
+            display: block;
+            margin: 0 auto 20px auto; 
+        }
+
+        .login-container p {
+            color: #a2a2bd;
+            font-size: 14px;
+            margin-bottom: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #e94560; font-weight: bold; }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: rgba(26, 26, 46, 0.8);
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus { border-color: #e94560; }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background-color: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover { background-color: #d13d56; }
+        .btn-login:active { transform: scale(0.98); }
+
+        .help-link {
+            display: block;
+            margin-top: 20px;
+            color: #a2a2bd;
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .help-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH" class="login-logo">
+        
+        <p>CSC - Central de Serviço Compartilhada</p>
+
+        <div class="form-group">
+            <label for="email">Usuário</label>
+            <input type="text" id="email" placeholder="Ex: nome.sobrenome" required>
+        </div>
+
+        <div class="form-group">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" placeholder="Sua senha de equipe" required>
+        </div>
+
+        <button class="btn-login" onclick="fazerLogin()">Entrar no Sistema</button>
+
+        <a href="#" class="help-link" onclick="alert('Procure Juninho, Carlos ou Augusto para recuperar seu acesso.')">Esqueceu sua senha?</a>
+    </div>
+
+    <script>
+        async function fazerLogin() {
+            const usuario = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            if (!usuario || !senha) {
+                alert("Preencha usuário e senha.");
+                return;
+            }
+
+            try {
+                // Chama a nossa API no Node.js
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
+
+                const data = await response.json();
+
+                if (data.sucesso) {
+                    // Salva quem logou no navegador e joga pro dashboard
+                    localStorage.setItem('usuarioLogado', JSON.stringify(data.usuario));
+                    window.location.href = "/dashboard";
+                } else {
+                    alert(data.mensagem); // Mostra "Usuário ou senha incorretos"
+                }
+            } catch (error) {
+                alert("Erro de conexão com o servidor. Verifique se o Node está rodando no terminal.");
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

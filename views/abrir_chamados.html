@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abertura de Chamado - GLPI Live</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f7f6; display: flex; height: 100vh; }
+
+        .sidebar { width: 240px; background-color: #1a1a2e; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c44; }
+        .sidebar-header img { width: 120px; }
+        .nav-menu { flex: 1; padding: 10px 0; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #a2a2bd; text-decoration: none; }
+        .nav-item.active { background-color: #e94560; color: white; }
+
+        .main-content { flex: 1; overflow-y: auto; padding: 30px; }
+        .header-title { margin-bottom: 30px; }
+        .header-title h2 { color: #333; font-size: 22px; }
+
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .category-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: #333; }
+        .category-card:hover { border-color: #e94560; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .category-card i { font-size: 24px; color: #e94560; width: 40px; text-align: center; }
+        .category-card span { font-weight: 600; font-size: 14px; }
+
+        .search-container { width: 100%; max-width: 600px; margin: 0 auto 40px auto; position: relative; }
+        .search-container input { width: 100%; padding: 12px 40px 12px 15px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        .search-container i { position: absolute; right: 15px; top: 15px; color: #999; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/public/img/logo-igreja.png" alt="Logo">
+        </div>
+        <nav class="nav-menu">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
+            <a href="/chamados" class="nav-item active"><i class="fas fa-headset"></i> Assistência</a>
+            <a href="/escalas" class="nav-item"><i class="fas fa-calendar-alt"></i> Escalas</a>
+        </nav>
+    </div>
+
+    <main class="main-content">
+        <div class="search-container">
+            <input type="text" placeholder="O que você está procurando?">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="header-title">
+            <h2>Selecione uma categoria para seu chamado:</h2>
+        </div>
+
+        <div class="category-grid">
+            <a href="#" class="category-card"><i class="fas fa-paint-brush"></i> <span>Artes e Mídia</span></a>
+            <a href="#" class="category-card"><i class="fas fa-video"></i> <span>Cortes de Vídeo</span></a>
+            <a href="#" class="category-card"><i class="fas fa-broadcast-tower"></i> <span>Transmissão / Live</span></a>
+            <a href="#" class="category-card"><i class="fas fa-microphone"></i> <span>Áudio / Microfones</span></a>
+            <a href="#" class="category-card"><i class="fas fa-network-wired"></i> <span>Internet / Rede</span></a>
+            <a href="#" class="category-card"><i class="fas fa-laptop-code"></i> <span>Software / App</span></a>
+            <a href="#" class="category-card"><i class="fas fa-keyboard"></i> <span>Periféricos</span></a>
+            <a href="#" class="category-card"><i class="fas fa-bolt"></i> <span>Energia / Elétrica</span></a>
+            <a href="#" class="category-card"><i class="fas fa-file-alt"></i> <span>Relatório de Erro</span></a>
+            <a href="#" class="category-card"><i class="fas fa-question-circle"></i> <span>Outros Suportes</span></a>
+        </div>
+    </main>
+
+    <script>
+        async function registrarChamado(categoriaNome) {
+            // Inteligência: Puxa o nome de quem realmente está logado
+            const userStore = localStorage.getItem('usuarioLogado');
+            if (!userStore) {
+                alert("Sessão expirada. Faça login novamente.");
+                window.location.href = '/';
+                return;
+            }
+            const usuarioReal = JSON.parse(userStore).user;
+
+            const dadosChamado = {
+                titulo: `Solicitação de ${categoriaNome}`,
+                categoria: categoriaNome,
+                prioridade: "Média",
+                requerente: usuarioReal,
+                descricao: `Abertura de chamado para suporte em: ${categoriaNome}`,
+                progresso: 100
+            };
+
+            try {
+                const resposta = await fetch('/api/chamados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosChamado)
+                });
+
+                if (resposta.ok) {
+                    alert(`✅ Chamado aberto com sucesso para: ${usuarioReal}`);
+                    window.location.href = '/chamados'; 
+                }
+            } catch (erro) {
+                alert("❌ Erro ao registrar chamado.");
+            }
+        }
+
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const nome = card.querySelector('span').innerText;
+                registrarChamado(nome);
+            });
+        });
+    </script>
+</body>
+</html>

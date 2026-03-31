@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GLPI Live</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .navbar { background-color: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+        .navbar-brand { display: flex; align-items: center; gap: 15px; }
+        .navbar-brand img { height: 40px; }
+        .navbar-title { font-size: 20px; font-weight: bold; color: #e94560; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .user-menu { display: flex; align-items: center; gap: 15px; }
+        .user-name { font-size: 14px; color: #a2a2bd; }
+        
+        .btn-logout { background-color: transparent; color: #e94560; border: 1px solid #e94560; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; text-decoration: none; }
+        .btn-logout:hover { background-color: #e94560; color: #fff; }
+        
+        .main-content { padding: 40px 20px; flex: 1; max-width: 1000px; margin: 0 auto; width: 100%; }
+        .welcome-section { margin-bottom: 40px; text-align: center; }
+        .welcome-section h2 { font-size: 28px; color: #fff; margin-bottom: 10px; }
+        .welcome-section p { color: #a2a2bd; font-size: 16px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+        
+        .card { background-color: #16213e; border-radius: 10px; padding: 30px 20px; text-align: center; text-decoration: none; color: #fff; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(233, 69, 96, 0.2); border-color: #e94560; }
+        .card-icon { font-size: 48px; margin-bottom: 15px; }
+        .card-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #e94560; }
+        .card-desc { font-size: 14px; color: #a2a2bd; line-height: 1.4; }
+        
+        .footer { text-align: center; padding: 20px; background-color: #16213e; color: #a2a2bd; font-size: 12px; margin-top: auto; }
+        
+        @media (max-width: 600px) {
+            .navbar { flex-direction: column; gap: 15px; padding: 15px; }
+            .user-name { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="navbar-brand">
+            <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH">
+            <span class="navbar-title">CSC Live</span>
+        </div>
+        <div class="user-menu">
+            <span class="user-name" id="nome-usuario-tela">Carregando...</span>
+            <button onclick="fazerLogout()" class="btn-logout">Sair</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="welcome-section">
+            <h2>Bem-vindo à Central de Serviço</h2>
+            <p>Selecione o módulo que deseja acessar abaixo:</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <a href="/escalas" class="card">
+                <div class="card-icon">📅</div>
+                <div class="card-title">Gestão de Escalas</div>
+                <div class="card-desc">Visualize os cultos, gere escalas mensais e exporte os arquivos em PDF.</div>
+            </a>
+
+            <a href="/chamados" class="card">
+                <div class="card-icon">🛠️</div>
+                <div class="card-title">Help Desk & Chamados</div>
+                <div class="card-desc">Abra solicitações de artes, relate problemas na live e gerencie tickets.</div>
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        &copy; 2026 Ministério Live - Nova Vida BH. Desenvolvido por Equipe de TI.
+    </footer>
+
+    <script>
+        // Inteligência para puxar o nome do usuário logado
+        window.onload = () => {
+            const userStore = localStorage.getItem('usuarioLogado');
+            if (!userStore) {
+                // Se não tiver login salvo, expulsa para a tela inicial
+                window.location.href = '/';
+                return;
+            }
+            const usuario = JSON.parse(userStore);
+            // Atualiza o texto na barra superior
+            document.getElementById('nome-usuario-tela').innerHTML = `Olá, <strong>${usuario.user} (${usuario.perfil})</strong>`;
+        };
+
+        // Função para deslogar
+        function fazerLogout() {
+            localStorage.removeItem('usuarioLogado');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

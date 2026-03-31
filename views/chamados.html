@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle - GLPI Live</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; background-color: #f4f7f6; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: 240px; background-color: #1a1a2e; color: white; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c44; }
+        .sidebar-header img { width: 120px; }
+        
+        .nav-menu { flex: 1; padding: 10px 0; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #a2a2bd; text-decoration: none; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background-color: #e94560; color: white; }
+        .nav-item i { width: 20px; text-align: center; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        .top-bar { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; padding: 0 25px; justify-content: space-between; }
+        .search-box { background: #eee; padding: 8px 15px; border-radius: 20px; width: 300px; display: flex; align-items: center; gap: 10px; }
+        .search-box input { border: none; background: transparent; outline: none; width: 100%; }
+
+        .container { padding: 25px; }
+        
+        /* Abas Superiores */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: #e94560; color: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Estilo da Tabela */
+        .card-table { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f8f9fa; color: #666; text-align: left; padding: 15px; border-bottom: 2px solid #eee; text-transform: uppercase; font-size: 11px; }
+        td { padding: 15px; border-bottom: 1px solid #eee; color: #333; }
+        tr:hover { background-color: #f9f9f9; }
+
+        .prio-tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; color: white; }
+        .prio-baixa { background: #ffc107; color: black; }
+        .prio-media { background: #17a2b8; }
+        .prio-alta { background: #dc3545; }
+
+        .progress-container { width: 100px; background: #eee; height: 8px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
+        .progress-bar { height: 100%; background: #28a745; transition: 0.5s; }
+        .progress-text { font-size: 10px; font-weight: bold; display: block; }
+
+        .btn-new { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; }
+        
+        /* Formulário de Usuários */
+        .form-user { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-acao { padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/public/img/logo-igreja.png" alt="Logo">
+        </div>
+        <nav class="nav-menu">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
+            <a href="/chamados" class="nav-item active"><i class="fas fa-headset"></i> Assistência</a>
+            <a href="/escalas" class="nav-item"><i class="fas fa-calendar-alt"></i> Escalas</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="top-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Pesquisar...">
+            </div>
+            <div class="user-info">
+                <strong id="header-user-name">Usuário</strong> <i class="fas fa-user-circle"></i>
+            </div>
+        </header>
+
+        <div class="container">
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="mudarAba('helpdesk')">Help Desk & Chamados</button>
+                <button class="tab-btn" id="btn-tab-usuarios" onclick="mudarAba('usuarios')" style="display: none;">Gestão de Usuários (Admin)</button>
+            </div>
+
+            <div id="aba-helpdesk" class="tab-content active">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Quadro de Chamados</h2>
+                    <a href="/abrir-chamado" class="btn-new">+ Novo Chamado</a>
+                </div>
+
+                <div class="card-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título / Descrição</th>
+                                <th>Status</th>
+                                <th>Prioridade</th>
+                                <th>Requerente</th>
+                                <th>Atribuído</th>
+                                <th>Tempo (SLA)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-chamados-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="aba-usuarios" class="tab-content">
+                <h2>Controle de Acessos</h2>
+                <p style="margin-bottom: 20px; color: #666;">Crie novos acessos para o sistema. Eles terão login imediato.</p>
+                
+                <div class="form-user">
+                    <div class="form-group">
+                        <label>Nome de Usuário:</label>
+                        <input type="text" id="novo-user" placeholder="ex: joao.silva">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha Padrão:</label>
+                        <input type="text" id="nova-senha" placeholder="ex: equipeH">
+                    </div>
+                    <div class="form-group">
+                        <label>Perfil de Acesso:</label>
+                        <select id="novo-perfil">
+                            <option value="MEMBRO">Membro (Visualiza)</option>
+                            <option value="LIDER">Líder (Visualiza Escala)</option>
+                            <option value="ADMIN">Admin (Acesso Total)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Equipe (A-G):</label>
+                        <input type="text" id="nova-equipe" placeholder="ex: C" style="width: 80px;">
+                    </div>
+                    <button class="btn-new" onclick="criarUsuario()" style="height: 40px; margin-bottom: 2px;">+ Adicionar</button>
+                </div>
+
+                <div class="card-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>Perfil</th>
+                                <th>Equipe Vinculada</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-usuarios-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const userStore = localStorage.getItem('usuarioLogado');
+            if (!userStore) {
+                window.location.href = '/';
+                return;
+            }
+            const usuario = JSON.parse(userStore);
+            document.getElementById('header-user-name').innerText = usuario.user;
+
+            // Se for Admin, mostra a aba de gerenciar usuários
+            if (usuario.perfil === 'ADMIN') {
+                document.getElementById('btn-tab-usuarios').style.display = 'inline-block';
+                carregarUsuarios();
+            }
+
+            carregarChamadosDoBanco();
+        };
+
+        function mudarAba(aba) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if(aba === 'helpdesk') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('aba-helpdesk').classList.add('active');
+            } else {
+                document.getElementById('btn-tab-usuarios').classList.add('active');
+                document.getElementById('aba-usuarios').classList.add('active');
+            }
+        }
+
+        // --- LÓGICA DE CHAMADOS ---
+        async function carregarChamadosDoBanco() {
+            try {
+                const resposta = await fetch('/api/chamados');
+                const chamados = await resposta.json();
+                const tbody = document.getElementById('lista-chamados-body');
+                tbody.innerHTML = '';
+
+                chamados.forEach(c => {
+                    const tr = document.createElement('tr');
+                    let corProgresso = "#28a745"; 
+                    if (c.progresso < 50) corProgresso = "#ffc107"; 
+                    if (c.progresso < 20) corProgresso = "#dc3545"; 
+
+                    tr.innerHTML = `
+                        <td>${c.id}</td>
+                        <td><strong>${c.titulo}</strong><br><small>${c.categoria} > Suporte</small></td>
+                        <td><i class="fas fa-circle" style="color: ${c.status === 'Pendente' ? '#7f8c8d' : '#28a745'}"></i> ${c.status}</td>
+                        <td><span class="prio-tag prio-${c.prioridade.toLowerCase()}">${c.prioridade}</span></td>
+                        <td><strong>${c.requerente}</strong></td>
+                        <td>${c.atribuido}</td>
+                        <td>
+                            <span class="progress-text">${c.progresso}% Restante</span>
+                            <div class="progress-container"><div class="progress-bar" style="width: ${c.progresso}%; background: ${corProgresso};"></div></div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (erro) {
+                console.error("Erro ao carregar chamados:", erro);
+            }
+        }
+
+        // --- LÓGICA DE USUÁRIOS (CRUD) ---
+        async function carregarUsuarios() {
+            try {
+                const res = await fetch('/api/usuarios');
+                const usuarios = await res.json();
+                const tbody = document.getElementById('lista-usuarios-body');
+                tbody.innerHTML = '';
+
+                usuarios.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${u.id}</td>
+                        <td><strong>${u.user}</strong></td>
+                        <td>${u.perfil}</td>
+                        <td>Equipe ${u.equipe}</td>
+                        <td><button class="btn-acao" onclick="deletarUsuario(${u.id})"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (erro) {
+                console.error(erro);
+            }
+        }
+
+        async function criarUsuario() {
+            const user = document.getElementById('novo-user').value;
+            const senha = document.getElementById('nova-senha').value;
+            const perfil = document.getElementById('novo-perfil').value;
+            const equipe = document.getElementById('nova-equipe').value || 'NENHUMA';
+
+            if(!user || !senha) return alert("Preencha Usuário e Senha.");
+
+            try {
+                const res = await fetch('/api/usuarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, senha, perfil, equipe })
+                });
+                
+                if (res.ok) {
+                    alert("✅ Usuário criado no banco de dados!");
+                    document.getElementById('novo-user').value = '';
+                    document.getElementById('nova-senha').value = '';
+                    carregarUsuarios();
+                } else {
+                    alert("Erro. Este usuário já existe.");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function deletarUsuario(id) {
+            if(!confirm("Tem certeza que deseja excluir o acesso deste usuário?")) return;
+            try {
+                await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+                carregarUsuarios();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
