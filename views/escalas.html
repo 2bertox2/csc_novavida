@@ -36,12 +36,13 @@
         .mista-checkboxes label { background: #f0f0f0; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
 
         .btn-salvar-db { background: #28a745; width: 100%; font-size: 16px; margin-top: 10px; }
+        .btn-excluir { background: #dc3545; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
         .btn-exportar { background: #17a2b8; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
         textarea { width: 100%; margin-top: 10px; background: #f9f9f9; color: #333; border: 1px solid #ccc; }
 
         @media print {
             body { background: white; padding: 0; }
-            .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura { display: none !important; }
+            .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura, .btn-excluir { display: none !important; }
             .table-container { box-shadow: none; padding: 0; }
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 14px; }
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -57,9 +58,10 @@
 
     <div class="admin-panel" id="painel-admin">
         <div class="input-group">
-            <label>1. Selecione o Mês para Gerar/Editar:</label>
+            <label>1. Selecione o Mês:</label>
             <input type="month" id="mesAno">
-            <button onclick="gerarTabelaBase()">Construir Estrutura do Mês</button>
+            <button onclick="carregarParaEdicao()" style="background: #007AFF;">✏️ Carregar / Editar Escala</button>
+            <button onclick="gerarTabelaBase()">Construir Nova Estrutura</button>
         </div>
         <div class="input-group">
             <label>2. Adicionar Evento Extra (Ex: Sexta-Vigília):</label>
@@ -67,7 +69,8 @@
             <input type="text" id="nome-extra" placeholder="Nome do Evento" style="width: 200px;">
             <button onclick="adicionarEventoExtra()" style="background: #AF52DE;">Inserir</button>
         </div>
-        <button onclick="salvarEscalaNoBanco()" class="btn-salvar-db">💾 Salvar Escala no Banco (Executar Sorteios Mistos)</button>
+        <button onclick="salvarEscalaNoBanco()" class="btn-salvar-db">💾 Salvar Escala no Banco</button>
+        <button onclick="excluirEscala()" class="btn-excluir" id="btn-excluir-admin">🗑️ Excluir Escala Oficial</button>
     </div>
 
     <div class="table-container" id="escala-print">
@@ -96,7 +99,6 @@
     </div>
 
     <script>
-        // Base de Dados Central das Equipes Atualizadas
         const equipesDB = {
             "A": ["CARLOS", "AUGUSTO", "DANIEL"],
             "B": ["SÉRGIO", "DAVI", "BENVINDO"],
@@ -141,6 +143,7 @@
             return `${hj.getFullYear()}-${(hj.getMonth() + 1).toString().padStart(2, '0')}`;
         }
 
+        // Gera a estrutura do zero, apagando tudo da tela
         function gerarTabelaBase() {
             const val = document.getElementById('mesAno').value;
             if(!val) return alert("Selecione o mês!");
@@ -150,6 +153,7 @@
             const tbody = document.getElementById('corpo-tabela');
             const listaF = document.getElementById('feriados-lista');
             tbody.innerHTML = ''; listaF.innerHTML = '';
+            document.getElementById('obs-geral').value = '';
             
             const diasMes = new Date(ano, mes, 0).getDate();
             for(let d=1; d<=diasMes; d++) {
@@ -161,6 +165,82 @@
                 if(feriados2026[`${mes-1}-${d}`]) listaF.innerHTML += `FERIADO NACIONAL: ${d}/${mes.toString().padStart(2, '0')} - ${feriados2026[`${mes-1}-${d}`]}<br>`;
             }
             document.getElementById('btn-imprimir').style.display = 'block';
+            document.getElementById('btn-excluir-admin').style.display = 'none';
+        }
+
+        // CARREGAR PARA EDIÇÃO (ADMIN)
+        async function carregarParaEdicao() {
+            const mesAno = document.getElementById('mesAno').value;
+            if(!mesAno) return alert("Selecione o mês para carregar.");
+
+            try {
+                const response = await fetch(`/api/escalas/${mesAno}`);
+                const result = await response.json();
+                
+                if (result.sucesso) {
+                    const dados = result.dados;
+                    document.getElementById('titulo-mes').innerText = dados.titulo;
+                    document.getElementById('feriados-lista').innerHTML = dados.feriados;
+                    document.getElementById('obs-geral').value = dados.obs || "";
+                    
+                    const tbody = document.getElementById('corpo-tabela');
+                    tbody.innerHTML = '';
+                    
+                    dados.linhas.forEach(linha => {
+                        const tr = document.createElement('tr');
+                        tr.className = linha.equipe ? `bg-${linha.equipe}` : '';
+                        
+                        let optionsHTML = '<option value="">---</option>';
+                        for(let e in equipesDB) {
+                            const isSelected = (linha.equipe === e) ? 'selected' : '';
+                            optionsHTML += `<option value="${e}" ${isSelected}>EQUIPE ${e}</option>`;
+                        }
+                        const isMista = (linha.equipe === 'MISTA') ? 'selected' : '';
+                        optionsHTML += `<option value="MISTA" ${isMista}>ESCALA MISTA</option>`;
+
+                        tr.innerHTML = `
+                            <td>${linha.evento}</td>
+                            <td>${linha.dia}</td>
+                            <td>
+                                <select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${optionsHTML}</select>
+                            </td>
+                            <td class="membros-td">${linha.membros}</td>
+                        `;
+                        tbody.appendChild(tr);
+
+                        if (linha.equipe === 'MISTA') {
+                            const select = tr.querySelector('.select-equipe');
+                            select.style.display = 'none';
+                            tr.cells[2].innerHTML += ` <strong>MISTA (Carregada)</strong><br><button onclick="destravarMista(this)" style="font-size:10px; padding:2px 5px; margin-top:5px; background:#333;">Editar Sorteio</button>`;
+                        }
+                    });
+
+                    document.getElementById('btn-imprimir').style.display = 'block';
+                    document.getElementById('btn-excluir-admin').style.display = 'block';
+                    alert("Escala carregada e pronta para edição.");
+                } else {
+                    alert("Nenhuma escala salva para este mês. Você pode gerar uma nova estrutura.");
+                }
+            } catch (err) {
+                console.error("Erro na busca para edição:", err);
+            }
+        }
+
+        function destravarMista(btn) {
+            const tr = btn.closest('tr');
+            tr.cells[2].innerHTML = `
+                <select class="select-equipe" onchange="tratarSelecaoEquipe(this)">
+                    <option value="">---</option>
+                    <option value="A">EQUIPE A</option>
+                    <option value="B">EQUIPE B</option>
+                    <option value="C">EQUIPE C</option>
+                    <option value="D">EQUIPE D</option>
+                    <option value="E">EQUIPE E</option>
+                    <option value="F">EQUIPE F</option>
+                    <option value="G">EQUIPE G</option>
+                    <option value="MISTA" selected>ESCALA MISTA</option>
+                </select>`;
+            tratarSelecaoEquipe(tr.querySelector('.select-equipe'));
         }
 
         function adicionarEventoExtra() {
@@ -216,7 +296,6 @@
             }
         }
 
-        // NOVO ALGORITMO DO SORTEIO (INTELIGENTE E JUSTO)
         async function salvarEscalaNoBanco() {
             const mesAno = document.getElementById('mesAno').value;
             if(!mesAno) return alert("Selecione o mês base primeiro.");
@@ -231,10 +310,10 @@
                 const evento = tr.cells[0].innerText;
                 const dia = tr.cells[1].innerText;
                 const select = tr.querySelector('.select-equipe');
-                const valorEquipe = select.value;
+                let valorEquipe = select ? select.value : 'MISTA'; // Se não tem select, é MISTA travada
                 let membrosFinais = tr.querySelector('.membros-td').innerText;
 
-                if (valorEquipe === 'MISTA') {
+                if (select && valorEquipe === 'MISTA') {
                     const checkboxes = Array.from(tr.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
                     if (checkboxes.length < 2) {
                         alert(`A Escala Mista do dia ${dia} precisa de pelo menos 2 equipes selecionadas!`);
@@ -242,13 +321,11 @@
                     }
                     
                     let sorteados = [];
-                    // Cria uma cópia das equipes para não apagar do banco principal
                     let poolPorEquipe = {};
                     checkboxes.forEach(e => {
-                        poolPorEquipe[e] = equipesDB[e].filter(m => m !== "DANIEL"); // Blindagem do Daniel mantida
+                        poolPorEquipe[e] = equipesDB[e].filter(m => m !== "DANIEL"); 
                     });
 
-                    // PASSO 1: Garante 1 membro de cada equipe selecionada (até o limite de 3)
                     checkboxes.forEach(e => {
                         if (sorteados.length < 3 && poolPorEquipe[e].length > 0) {
                             let idx = Math.floor(Math.random() * poolPorEquipe[e].length);
@@ -257,7 +334,6 @@
                         }
                     });
 
-                    // PASSO 2: Se selecionou apenas 2 equipes, ainda falta 1 pessoa. Junta o resto e sorteia.
                     if (sorteados.length < 3) {
                         let poolRestante = [];
                         for (let e in poolPorEquipe) {
@@ -271,7 +347,6 @@
 
                     membrosFinais = sorteados.join(' | ');
                     
-                    // Atualiza a tela e trava as opções
                     tr.querySelector('.membros-td').innerText = membrosFinais;
                     select.style.display = 'none'; 
                     tr.cells[2].innerHTML = `<strong>ESCALA MISTA</strong>`;
@@ -295,13 +370,43 @@
                 });
                 
                 if (response.ok) {
-                    alert("✅ Escala salva no banco e Sorteios realizados com sucesso!");
+                    alert("✅ Escala salva no banco de dados com sucesso!");
+                    document.getElementById('btn-excluir-admin').style.display = 'block';
                 }
             } catch (err) {
                 console.error("Erro ao salvar:", err);
             }
         }
 
+        // ROTA PARA EXCLUIR ESCALA (ADMIN)
+        async function excluirEscala() {
+            const mesAno = document.getElementById('mesAno').value;
+            if(!mesAno) return;
+            
+            if(!confirm("⚠️ Tem certeza que deseja excluir toda a escala deste mês do banco de dados?")) return;
+
+            try {
+                const response = await fetch(`/api/escalas/${mesAno}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert("🗑️ Escala excluída com sucesso.");
+                    document.getElementById('corpo-tabela').innerHTML = '';
+                    document.getElementById('feriados-lista').innerHTML = '';
+                    document.getElementById('obs-geral').value = '';
+                    document.getElementById('titulo-mes').innerText = 'SELECIONE UM MÊS';
+                    document.getElementById('btn-imprimir').style.display = 'none';
+                    document.getElementById('btn-excluir-admin').style.display = 'none';
+                } else {
+                    alert("Erro ao excluir a escala.");
+                }
+            } catch (err) {
+                console.error("Erro na exclusão:", err);
+            }
+        }
+
+        // LEITURA PARA MEMBROS E LIDERES
         async function buscarEscalaSalva(mesParam = null) {
             const mesAno = mesParam || document.getElementById('mesAnoLeitura').value;
             if(!mesAno) return;
