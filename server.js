@@ -8,21 +8,18 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Configuração do PostgreSQL em Nuvem
-// Para testar localmente, substitua a string abaixo pela sua URL do banco (Neon ou Supabase).
-// No ambiente de produção (Render), utilizaremos variáveis de ambiente.
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_jpUhIyC2Bi7O@ep-red-truth-acfzcveg-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+// Configuração do PostgreSQL em Nuvem (Neon/Supabase)
+const connectionString = process.env.DATABASE_URL || 'COLE_AQUI_A_URL_DO_SEU_BANCO_POSTGRESQL';
 
 const pool = new Pool({
     connectionString: connectionString,
     ssl: {
-        rejectUnauthorized: false // Parâmetro exigido para a maioria das conexões seguras em nuvem
+        rejectUnauthorized: false
     }
 });
 
 async function setupDatabase() {
     try {
-        // 1. Criação da Tabela de Escalas
         await pool.query(`
             CREATE TABLE IF NOT EXISTS escalas (
                 id SERIAL PRIMARY KEY,
@@ -32,7 +29,6 @@ async function setupDatabase() {
             )
         `);
 
-        // 2. Criação da Tabela de Chamados
         await pool.query(`
             CREATE TABLE IF NOT EXISTS chamados (
                 id SERIAL PRIMARY KEY,
@@ -48,7 +44,6 @@ async function setupDatabase() {
             )
         `);
 
-        // 3. Criação da Tabela de Usuários
         await pool.query(`
             CREATE TABLE IF NOT EXISTS usuarios (
                 id SERIAL PRIMARY KEY,
@@ -59,7 +54,6 @@ async function setupDatabase() {
             )
         `);
 
-        // Alimentação inicial dos usuários base, condicionada a um banco vazio.
         const countResult = await pool.query('SELECT COUNT(*) as count FROM usuarios');
         if (parseInt(countResult.rows[0].count) === 0) {
             const usuariosBase = [
@@ -92,7 +86,6 @@ setupDatabase();
 
 // --- ROTAS DA API ---
 
-// Rota de Autenticação
 app.post('/api/login', async (req, res) => {
     const { usuario, senha } = req.body;
     try {
@@ -111,7 +104,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Criação de Usuário
 app.post('/api/usuarios', async (req, res) => {
     const { user, senha, perfil, equipe } = req.body;
     try {
@@ -125,7 +117,6 @@ app.post('/api/usuarios', async (req, res) => {
     }
 });
 
-// Listagem de Usuários (Painel Administrativo)
 app.get('/api/usuarios', async (req, res) => {
     try {
         const result = await pool.query('SELECT id, nome_usuario as user, perfil, equipe FROM usuarios ORDER BY nome_usuario ASC');
@@ -135,7 +126,6 @@ app.get('/api/usuarios', async (req, res) => {
     }
 });
 
-// Exclusão de Usuário
 app.delete('/api/usuarios/:id', async (req, res) => {
     try {
         await pool.query('DELETE FROM usuarios WHERE id = $1', [req.params.id]);
@@ -149,7 +139,6 @@ app.delete('/api/usuarios/:id', async (req, res) => {
 app.post('/api/escalas', async (req, res) => {
     const { mesAno, dados } = req.body;
     try {
-        // Lógica Upsert padrão do PostgreSQL (Insere ou Atualiza caso exista conflito)
         await pool.query(
             'INSERT INTO escalas (mes_ano, dados_json) VALUES ($1, $2) ON CONFLICT (mes_ano) DO UPDATE SET dados_json = EXCLUDED.dados_json',
             [mesAno, JSON.stringify(dados)]
@@ -168,6 +157,16 @@ app.get('/api/escalas/:mesAno', async (req, res) => {
         } else {
             res.status(404).json({ sucesso: false });
         }
+    } catch (err) {
+        res.status(500).json({ sucesso: false, erro: err.message });
+    }
+});
+
+// NOVA ROTA: Exclusão de Escala
+app.delete('/api/escalas/:mesAno', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM escalas WHERE mes_ano = $1', [req.params.mesAno]);
+        res.status(200).json({ sucesso: true, mensagem: "Escala excluída com sucesso." });
     } catch (err) {
         res.status(500).json({ sucesso: false, erro: err.message });
     }
