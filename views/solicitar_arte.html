@@ -7,49 +7,72 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a1a2e; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .form-container { background: #16213e; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 500px; border-top: 4px solid #e94560; }
+        
+        .form-container { background: #16213e; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 500px; border-top: 4px solid #e94560; margin: 20px 0; }
         .form-header { text-align: center; margin-bottom: 25px; }
         .form-header img { max-width: 120px; margin-bottom: 10px; }
         .form-header h2 { color: #e94560; font-size: 22px; }
         .form-header p { color: #a2a2bd; font-size: 14px; margin-top: 5px; }
+
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #fff; }
-        .form-group input, .form-group textarea { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #fff; outline: none; }
-        .form-group input:focus, .form-group textarea:focus { border-color: #e94560; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #fff; outline: none; transition: 0.3s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #e94560; box-shadow: 0 0 5px rgba(233, 69, 96, 0.3); }
+
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+
         .checkbox-group { display: flex; align-items: center; gap: 10px; background: #0f3460; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
         .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
-        .checkbox-group label { margin: 0; cursor: pointer; font-size: 13px; color: #a2a2bd; }
+        .checkbox-group label { margin: 0; cursor: pointer; font-size: 13px; color: #a2a2bd; line-height: 1.4; }
+
         .btn-submit { width: 100%; padding: 15px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        .btn-submit:hover { background: #d13d56; }
+        .btn-submit:hover { background: #d13d56; transform: translateY(-2px); }
+        
+        @media (max-width: 500px) {
+            .row { flex-direction: column; gap: 0; }
+        }
     </style>
 </head>
 <body>
 
     <div class="form-container" id="form-area">
         <div class="form-header">
-            <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH">
+            <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH" onerror="this.style.display='none'">
             <h2>Central de Mídia</h2>
-            <p>Faça sua solicitação de arte para cultos ou eventos.</p>
+            <p>Preencha os dados abaixo para solicitar sua arte.</p>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Nome e Sobrenome</label>
+                <input type="text" id="nomeReq" placeholder="Ex: João Silva" required>
+            </div>
+            <div class="form-group">
+                <label>Ministério</label>
+                <input type="text" id="minReq" placeholder="Ex: Jovens" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="emailReq" placeholder="seuemail@exemplo.com" required>
+            </div>
+            <div class="form-group">
+                <label>WhatsApp</label>
+                <input type="text" id="whatsappReq" placeholder="(XX) XXXXX-XXXX" required>
+            </div>
         </div>
 
         <div class="form-group">
-            <label>Seu Nome / Ministério</label>
-            <input type="text" id="nomeReq" placeholder="Ex: João - Ministério de Jovens" required>
-        </div>
-
-        <div class="form-group">
-            <label>WhatsApp para Contato</label>
-            <input type="text" id="whatsappReq" placeholder="(XX) XXXXX-XXXX" required>
-        </div>
-
-        <div class="form-group">
-            <label>Detalhes da Arte (Texto, Cores, Tema)</label>
-            <textarea id="descricaoReq" rows="4" placeholder="Descreva como você imagina a arte..." required></textarea>
+            <label>O que você quer que a gente crie?</label>
+            <textarea id="descricaoReq" rows="5" placeholder="Descreva todos os detalhes: tema, textos que devem aparecer na imagem, referências, estilo..." required></textarea>
         </div>
 
         <div class="checkbox-group">
             <input type="checkbox" id="anexosReq">
-            <label for="anexosReq"><strong>Tenho arquivos/fotos para enviar.</strong><br>A equipe entrará em contato pelo seu WhatsApp para solicitar os arquivos.</label>
+            <label for="anexosReq"><strong>Tenho arquivos/fotos para a arte.</strong><br>A equipe de mídia entrará em contato pelo seu WhatsApp para solicitar os anexos.</label>
         </div>
 
         <button class="btn-submit" onclick="enviarSolicitacao()">Enviar Solicitação</button>
@@ -58,28 +81,36 @@
     <script>
         async function enviarSolicitacao() {
             const nome = document.getElementById('nomeReq').value;
+            const ministerio = document.getElementById('minReq').value;
+            const email = document.getElementById('emailReq').value;
             const zap = document.getElementById('whatsappReq').value;
             const desc = document.getElementById('descricaoReq').value;
             const temAnexo = document.getElementById('anexosReq').checked;
 
-            if (!nome || !zap || !desc) {
-                alert("Por favor, preencha todos os campos obrigatórios.");
+            if (!nome || !ministerio || !email || !zap || !desc) {
+                alert("Por favor, preencha todos os campos obrigatórios antes de enviar.");
                 return;
             }
 
-            let descricaoFinal = `WhatsApp: ${zap}\n\nDetalhes: ${desc}`;
+            // Formata a descrição para ficar bonita lá no painel de chamados do Admin
+            let descricaoFinal = `📍 Ministério: ${ministerio}\n📧 E-mail: ${email}\n📱 WhatsApp: ${zap}\n\n📝 O que deseja criar:\n${desc}`;
+            
             if (temAnexo) {
-                descricaoFinal += `\n\n🚨 ATENÇÃO: O solicitante possui arquivos/fotos. Chamar no WhatsApp para recolher.`;
+                descricaoFinal += `\n\n🚨 ATENÇÃO: O solicitante marcou que possui arquivos/fotos. Chame no WhatsApp para recolher os anexos.`;
             }
 
             const dadosChamado = {
-                titulo: `Arte Externa: ${nome}`,
+                titulo: `Criação de Arte: ${nome}`,
                 categoria: "Arte para Culto/Evento",
                 prioridade: "Média",
                 requerente: nome,
                 descricao: descricaoFinal,
                 progresso: 100
             };
+
+            const btn = document.querySelector('.btn-submit');
+            btn.innerText = 'Enviando...';
+            btn.disabled = true;
 
             try {
                 const response = await fetch('/api/chamados', {
@@ -90,14 +121,19 @@
 
                 if (response.ok) {
                     document.getElementById('form-area').innerHTML = `
-                        <div style="text-align: center; padding: 20px;">
-                            <h2 style="color: #28a745; margin-bottom: 15px;">✅ Solicitação Enviada!</h2>
-                            <p style="color: #a2a2bd;">Sua solicitação foi registrada no CSC Live. Nossa equipe analisará o pedido e entrará em contato no WhatsApp informado.</p>
+                        <div style="text-align: center; padding: 30px 10px;">
+                            <div style="font-size: 50px; margin-bottom: 20px;">✅</div>
+                            <h2 style="color: #28a745; margin-bottom: 15px;">Solicitação Enviada!</h2>
+                            <p style="color: #a2a2bd; line-height: 1.6;">Sua solicitação foi registrada com sucesso na Central de Mídia.<br>Nossa equipe analisará o pedido e entrará em contato pelo WhatsApp informado.</p>
+                            <br>
+                            <button class="btn-submit" onclick="window.location.reload()" style="margin-top: 20px;">Fazer Nova Solicitação</button>
                         </div>
                     `;
                 }
             } catch (erro) {
-                alert("Erro de conexão ao tentar enviar a solicitação.");
+                alert("Erro de conexão ao tentar enviar a solicitação. Verifique sua internet.");
+                btn.innerText = 'Enviar Solicitação';
+                btn.disabled = false;
             }
         }
     </script>
