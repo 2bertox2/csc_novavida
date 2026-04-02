@@ -55,73 +55,67 @@ async function setupDatabase() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS aniversarios (
                 id SERIAL PRIMARY KEY,
-                nome TEXT,
+                nome TEXT UNIQUE,
                 dia INTEGER,
                 mes INTEGER
             )
         `);
 
-        // INSERÇÃO AUTOMÁTICA DOS USUÁRIOS
-        const countUsers = await pool.query('SELECT COUNT(*) as count FROM usuarios');
-        if (parseInt(countUsers.rows[0].count) === 0) {
-            const usuariosBase = [
-                { nome_usuario: 'humberto.xavier', perfil: 'ADMIN', equipe: 'G', senha: 'equipeG' },
-                { nome_usuario: 'carlos.alberto', perfil: 'ADMIN', equipe: 'A', senha: 'equipeA' },
-                { nome_usuario: 'augusto.carlos', perfil: 'ADMIN', equipe: 'NENHUMA', senha: 'equipeADM' },
-                { nome_usuario: 'wallerson.oliveira', perfil: 'LIDER', equipe: 'C', senha: 'equipeC' },
-                { nome_usuario: 'sergio.miguel', perfil: 'LIDER', equipe: 'B', senha: 'equipeB' },
-                { nome_usuario: 'luiz.shalon', perfil: 'LIDER', equipe: 'D', senha: 'equipeD' },
-                { nome_usuario: 'marcos.silva', perfil: 'LIDER', equipe: 'E', senha: 'equipeE' },
-                { nome_usuario: 'samuel.piske', perfil: 'LIDER', equipe: 'F', senha: 'equipeF' },
-                // Novos Membros
-                { nome_usuario: 'rodrigo.botelho', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
-                { nome_usuario: 'wallysson.evaristo', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
-                { nome_usuario: 'victor.ribeiro', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
-                { nome_usuario: 'benvindo.miguel', perfil: 'MEMBRO', equipe: 'B', senha: 'equipeB' },
-                { nome_usuario: 'mateus.pinheiro', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
-                { nome_usuario: 'davi.augusto', perfil: 'MEMBRO', equipe: 'B', senha: 'equipeB' },
-                { nome_usuario: 'jose.balieiro', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
-                { nome_usuario: 'genivaldo.fernandes', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
-                { nome_usuario: 'carlos.rodrigues', perfil: 'MEMBRO', equipe: 'A', senha: 'equipeA' },
-                { nome_usuario: 'eduardo.marques', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' }
-            ];
+        // INSERÇÃO INTELIGENTE DOS USUÁRIOS
+        const usuariosBase = [
+            { nome_usuario: 'humberto.xavier', perfil: 'ADMIN', equipe: 'G', senha: 'equipeG' },
+            { nome_usuario: 'carlos.alberto', perfil: 'ADMIN', equipe: 'A', senha: 'equipeA' },
+            { nome_usuario: 'augusto.carlos', perfil: 'ADMIN', equipe: 'NENHUMA', senha: 'equipeADM' },
+            { nome_usuario: 'wallerson.oliveira', perfil: 'LIDER', equipe: 'C', senha: 'equipeC' },
+            { nome_usuario: 'sergio.miguel', perfil: 'LIDER', equipe: 'B', senha: 'equipeB' },
+            { nome_usuario: 'luiz.shalon', perfil: 'LIDER', equipe: 'D', senha: 'equipeD' },
+            { nome_usuario: 'marcos.silva', perfil: 'LIDER', equipe: 'E', senha: 'equipeE' },
+            { nome_usuario: 'samuel.piske', perfil: 'LIDER', equipe: 'F', senha: 'equipeF' },
+            { nome_usuario: 'rodrigo.botelho', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
+            { nome_usuario: 'wallysson.evaristo', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
+            { nome_usuario: 'victor.ribeiro', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
+            { nome_usuario: 'benvindo.miguel', perfil: 'MEMBRO', equipe: 'B', senha: 'equipeB' },
+            { nome_usuario: 'mateus.pinheiro', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
+            { nome_usuario: 'davi.augusto', perfil: 'MEMBRO', equipe: 'B', senha: 'equipeB' },
+            { nome_usuario: 'jose.balieiro', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' },
+            { nome_usuario: 'genivaldo.fernandes', perfil: 'MEMBRO', equipe: 'E', senha: 'equipeE' },
+            { nome_usuario: 'carlos.rodrigues', perfil: 'MEMBRO', equipe: 'A', senha: 'equipeA' },
+            { nome_usuario: 'eduardo.marques', perfil: 'MEMBRO', equipe: 'C', senha: 'equipeC' }
+        ];
 
-            for (let u of usuariosBase) {
-                await pool.query(
-                    'INSERT INTO usuarios (nome_usuario, senha, perfil, equipe) VALUES ($1, $2, $3, $4)',
-                    [u.nome_usuario, u.senha, u.perfil, u.equipe]
-                );
-            }
-            console.log("✅ Usuários e Líderes inseridos no banco.");
+        for (let u of usuariosBase) {
+            await pool.query(
+                'INSERT INTO usuarios (nome_usuario, senha, perfil, equipe) VALUES ($1, $2, $3, $4) ON CONFLICT (nome_usuario) DO NOTHING',
+                [u.nome_usuario, u.senha, u.perfil, u.equipe]
+            );
         }
 
-        // INSERÇÃO AUTOMÁTICA DOS ANIVERSÁRIOS
-        const countNivers = await pool.query('SELECT COUNT(*) as count FROM aniversarios');
-        if (parseInt(countNivers.rows[0].count) === 0) {
-            const aniversariosBase = [
-                { nome: 'Rodrigo Botelho', dia: 21, mes: 11 },
-                { nome: 'Wallysson Evaristo', dia: 17, mes: 4 },
-                { nome: 'Victor Ribeiro', dia: 6, mes: 9 },
-                { nome: 'Benvindo Ferreira Miguel', dia: 11, mes: 11 },
-                { nome: 'Mateus Pinheiro', dia: 26, mes: 3 },
-                { nome: 'Davi Augusto Santos Miguel', dia: 6, mes: 2 },
-                { nome: 'José Balieiro', dia: 23, mes: 3 },
-                { nome: 'Genivaldo Fernandes (Binho)', dia: 26, mes: 7 },
-                { nome: 'Carlos Alberto Rodrigues', dia: 1, mes: 12 },
-                { nome: 'Humberto Xavier', dia: 6, mes: 3 },
-                { nome: 'Wallerson Oliveira', dia: 8, mes: 10 },
-                { nome: 'Carlos Alberto Assunção', dia: 11, mes: 5 },
-                { nome: 'Marcos Vinicius', dia: 13, mes: 11 },
-                { nome: 'Augusto Carlos', dia: 3, mes: 9 },
-                { nome: 'José Luiz Barbosa', dia: 5, mes: 1 },
-                { nome: 'Sérgio Antônio Miguel', dia: 1, mes: 8 },
-                { nome: 'Samuel Piske', dia: 11, mes: 3 }
-            ];
+        // INSERÇÃO INTELIGENTE DOS ANIVERSÁRIOS
+        const aniversariosBase = [
+            { nome: 'Rodrigo Botelho', dia: 21, mes: 11 },
+            { nome: 'Wallysson Evaristo', dia: 17, mes: 4 },
+            { nome: 'Victor Ribeiro', dia: 6, mes: 9 },
+            { nome: 'Benvindo Ferreira Miguel', dia: 11, mes: 11 },
+            { nome: 'Mateus Pinheiro', dia: 26, mes: 3 },
+            { nome: 'Davi Augusto Santos Miguel', dia: 6, mes: 2 },
+            { nome: 'José Balieiro', dia: 23, mes: 3 },
+            { nome: 'Genivaldo Fernandes (Binho)', dia: 26, mes: 7 },
+            { nome: 'Carlos Alberto Rodrigues', dia: 1, mes: 12 },
+            { nome: 'Humberto Xavier', dia: 6, mes: 3 },
+            { nome: 'Wallerson Oliveira', dia: 8, mes: 10 },
+            { nome: 'Carlos Alberto Assunção', dia: 11, mes: 5 },
+            { nome: 'Marcos Vinicius', dia: 13, mes: 11 },
+            { nome: 'Augusto Carlos', dia: 3, mes: 9 },
+            { nome: 'José Luiz Barbosa', dia: 5, mes: 1 },
+            { nome: 'Sérgio Antônio Miguel', dia: 1, mes: 8 },
+            { nome: 'Samuel Piske', dia: 11, mes: 3 }
+        ];
 
-            for (let a of aniversariosBase) {
-                await pool.query('INSERT INTO aniversarios (nome, dia, mes) VALUES ($1, $2, $3)', [a.nome, a.dia, a.mes]);
-            }
-            console.log("✅ Aniversários inseridos no banco.");
+        for (let a of aniversariosBase) {
+            await pool.query(
+                'INSERT INTO aniversarios (nome, dia, mes) VALUES ($1, $2, $3) ON CONFLICT (nome) DO NOTHING', 
+                [a.nome, a.dia, a.mes]
+            );
         }
 
         console.log("✅ Conexão com o Banco de Dados em Nuvem estabelecida.");
@@ -226,6 +220,22 @@ app.post('/api/chamados', async (req, res) => {
         res.status(201).json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
+
+// NOVA ROTA: ATUALIZAR CHAMADO EXISTENTE
+app.put('/api/chamados/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, atribuido, progresso } = req.body;
+    try {
+        await pool.query(
+            'UPDATE chamados SET status = $1, atribuido = $2, progresso = $3 WHERE id = $4',
+            [status, atribuido, progresso, id]
+        );
+        res.json({ sucesso: true });
+    } catch (err) {
+        res.status(500).json({ sucesso: false, erro: err.message });
+    }
+});
+
 
 // --- ROTAS DO FRONTEND ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
