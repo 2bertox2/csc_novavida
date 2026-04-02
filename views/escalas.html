@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Escalas - GLPI Live</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a1a2e; color: #fff; padding: 20px; }
@@ -11,9 +12,10 @@
         .btn-voltar { color: #a2a2bd; text-decoration: none; border: 1px solid #a2a2bd; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
         .admin-panel { background: #16213e; padding: 20px; border-radius: 10px; max-width: 1100px; margin: 0 auto 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: none; }
         .input-group { background: #1a1a2e; padding: 15px; border-radius: 8px; border: 1px solid #0f3460; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input, select, textarea { padding: 10px; background: #16213e; color: #fff; border: 1px solid #0f3460; border-radius: 5px; font-weight: bold; }
-        button { padding: 10px 20px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        button:hover { background: #d13d56; }
+        input, select, textarea { padding: 10px; background: #16213e; color: #fff; border: 1px solid #0f3460; border-radius: 5px; font-weight: bold; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: #e94560; }
+        button { padding: 10px 20px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #d13d56; transform: translateY(-2px); }
         .table-container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; color: #000; }
         table { width: 100%; border-collapse: collapse; font-weight: bold; text-transform: uppercase; margin-top: 15px; }
         th, td { border: 2px solid #000; padding: 10px; text-align: center; vertical-align: middle; }
@@ -32,9 +34,32 @@
         .btn-excluir { background: #dc3545; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
         .btn-exportar { background: #17a2b8; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
         textarea { width: 100%; margin-top: 10px; background: #f9f9f9; color: #333; border: 1px solid #ccc; }
+
+        /* --- SISTEMA DE NOTIFICAÇÕES PROFISSIONAIS (TOAST) --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
+        .toast i { font-size: 20px; }
+        .toast.success { border-left-color: #28a745; }
+        .toast.success i { color: #28a745; }
+        .toast.error { border-left-color: #dc3545; }
+        .toast.error i { color: #dc3545; }
+        .toast.warning { border-left-color: #ffc107; }
+        .toast.warning i { color: #ffc107; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+        /* --- MODAL DE CONFIRMAÇÃO CUSTOMIZADO --- */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: scaleUp 0.2s ease forwards; }
+        .modal-content i { font-size: 50px; color: #dc3545; margin-bottom: 15px; display: block; }
+        .modal-content h3 { color: #333; margin-bottom: 10px; font-size: 20px; }
+        .modal-content p { color: #666; margin-bottom: 25px; font-size: 14px; }
+        .modal-btns { display: flex; gap: 15px; justify-content: center; }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         @media print {
             body { background: white; padding: 0; }
-            .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura, .btn-excluir { display: none !important; }
+            .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura, .btn-excluir, #toast-container { display: none !important; }
             .table-container { box-shadow: none; padding: 0; }
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 14px; }
             * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -43,8 +68,22 @@
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
+    <div id="custom-confirm" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Atenção</h3>
+            <p id="confirm-msg">Deseja realmente continuar com esta ação?</p>
+            <div class="modal-btns">
+                <button onclick="fecharConfirm()" style="background: #6c757d; flex: 1;">Cancelar</button>
+                <button id="btn-confirm-yes" style="background: #dc3545; flex: 1;">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <div class="header">
-        <a href="/dashboard" class="btn-voltar">⬅ Voltar ao Dashboard</a>
+        <a href="/dashboard" class="btn-voltar"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
         <h1 style="color: #e94560;">ESCALAS - <span id="nome-usuario-topo"></span></h1>
     </div>
 
@@ -52,24 +91,24 @@
         <div class="input-group">
             <label>1. Selecione o Mês:</label>
             <input type="month" id="mesAno">
-            <button onclick="carregarParaEdicao()" style="background: #007AFF;">✏️ Editar Escala</button>
-            <button onclick="gerarTabelaBase()">Construir Nova</button>
+            <button onclick="carregarParaEdicao()" style="background: #007AFF;"><i class="fas fa-pencil-alt"></i> Editar Escala</button>
+            <button onclick="gerarTabelaBase()"><i class="fas fa-table"></i> Construir Nova</button>
         </div>
         <div class="input-group">
             <label>2. Adicionar Evento Extra:</label>
             <input type="number" id="dia-extra" placeholder="Dia" style="width: 70px;" min="1" max="31">
             <input type="text" id="nome-extra" placeholder="Nome do Evento" style="width: 200px;">
-            <button onclick="adicionarEventoExtra()" style="background: #AF52DE;">Inserir</button>
+            <button onclick="adicionarEventoExtra()" style="background: #AF52DE;"><i class="fas fa-plus"></i> Inserir</button>
         </div>
-        <button onclick="salvarEscalaNoBanco()" class="btn-salvar-db">💾 Salvar Escala no Banco</button>
-        <button onclick="excluirEscala()" class="btn-excluir" id="btn-excluir-admin">🗑️ Excluir Escala Oficial</button>
+        <button onclick="salvarEscalaNoBanco()" class="btn-salvar-db"><i class="fas fa-save"></i> Salvar Escala no Banco</button>
+        <button onclick="solicitarExclusao()" class="btn-excluir" id="btn-excluir-admin"><i class="fas fa-trash-alt"></i> Excluir Escala Oficial</button>
     </div>
 
     <div class="table-container" id="escala-print">
         <div class="input-group" id="painel-leitura" style="background: #f4f4f4; border: 1px solid #ddd; display: none;">
             <label style="color: #000;">Visualizar Mês:</label>
             <input type="month" id="mesAnoLeitura" style="background: #fff; color: #000; border: 1px solid #ccc;">
-            <button onclick="buscarEscalaSalva()" style="background: #007AFF;">Buscar Escala</button>
+            <button onclick="buscarEscalaSalva()" style="background: #007AFF;"><i class="fas fa-search"></i> Buscar Escala</button>
         </div>
 
         <h2 id="titulo-mes" style="border-bottom: 2px solid #000; padding-bottom: 10px;">SELECIONE UM MÊS</h2>
@@ -89,7 +128,7 @@
         <div id="aniversarios-lista" style="margin-top: 5px; font-weight: bold; color: #007AFF; font-size: 14px;"></div>
         
         <textarea id="obs-geral" rows="4" placeholder="Observações Gerais (Preenchido pelo Admin)"></textarea>
-        <button onclick="window.print()" class="btn-exportar" id="btn-imprimir">🖨️ EXPORTAR PDF / IMPRIMIR</button>
+        <button onclick="window.print()" class="btn-exportar" id="btn-imprimir"><i class="fas fa-print"></i> EXPORTAR PDF / IMPRIMIR</button>
     </div>
 
     <script>
@@ -111,8 +150,45 @@
         };
 
         let usuarioAtual = null;
-        let aniversariosDoMes = [];
+        let callbackConfirmacao = null; // Guarda a função de exclusão
 
+        // --- FUNÇÕES DE NOTIFICAÇÃO (TOAST) ---
+        function mostrarToast(mensagem, tipo = 'warning') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            
+            let icon = '<i class="fas fa-exclamation-circle"></i>';
+            if(tipo === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
+            
+            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000); // Some depois de 4 segundos
+        }
+
+        // --- FUNÇÕES DO MODAL DE CONFIRMAÇÃO ---
+        function abrirConfirm(mensagem, acao) {
+            document.getElementById('confirm-msg').innerText = mensagem;
+            document.getElementById('custom-confirm').style.display = 'flex';
+            callbackConfirmacao = acao;
+        }
+
+        function fecharConfirm() {
+            document.getElementById('custom-confirm').style.display = 'none';
+            callbackConfirmacao = null;
+        }
+
+        document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+            if(callbackConfirmacao) callbackConfirmacao();
+            fecharConfirm();
+        });
+
+        // --- INICIALIZAÇÃO ---
         window.onload = () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) return window.location.href = '/';
@@ -140,9 +216,7 @@
                 const res = await fetch('/api/aniversarios');
                 const todos = await res.json();
                 return todos.filter(a => a.mes === mesFiltro);
-            } catch (err) {
-                return [];
-            }
+            } catch (err) { return []; }
         }
 
         async function preencherDatasEspeciais(mesNumero) {
@@ -165,7 +239,7 @@
 
         async function gerarTabelaBase() {
             const val = document.getElementById('mesAno').value;
-            if(!val) return alert("Selecione o mês!");
+            if(!val) return mostrarToast("Por favor, selecione o mês na primeira caixa.", "warning");
             const [ano, mes] = val.split('-').map(Number);
             
             document.getElementById('titulo-mes').innerText = `${new Date(ano, mes-1).toLocaleString('pt-br', {month: 'long'}).toUpperCase()} / ${ano}`;
@@ -185,11 +259,12 @@
             
             document.getElementById('btn-imprimir').style.display = 'block';
             document.getElementById('btn-excluir-admin').style.display = 'none';
+            mostrarToast("Estrutura da escala gerada. Configure as equipes e salve.", "success");
         }
 
         async function carregarParaEdicao() {
             const mesAno = document.getElementById('mesAno').value;
-            if(!mesAno) return;
+            if(!mesAno) return mostrarToast("Selecione o mês que deseja editar.", "warning");
             const [ano, mes] = mesAno.split('-').map(Number);
 
             try {
@@ -217,15 +292,20 @@
 
                         if (linha.equipe === 'MISTA') {
                             tr.querySelector('.select-equipe').style.display = 'none';
-                            tr.cells[2].innerHTML += ` <strong>MISTA (Carregada)</strong><br><button onclick="destravarMista(this)" style="font-size:10px; padding:2px 5px; margin-top:5px; background:#333; color:#fff; border:none; cursor:pointer;">Editar Sorteio</button>`;
+                            tr.cells[2].innerHTML += ` <strong>MISTA (Carregada)</strong><br><button onclick="destravarMista(this)" style="font-size:10px; padding:2px 5px; margin-top:5px; background:#333; color:#fff; border:none; cursor:pointer;"><i class="fas fa-edit"></i> Editar Sorteio</button>`;
                         }
                     });
 
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                    document.getElementById('btn-excluir-admin').style.display = 'block';
-                } else alert("Nenhuma escala salva para este mês.");
-            } catch (err) { console.error(err); }
+                    document.getElementById('btn-excluir-admin').style.display = 'inline-block';
+                    mostrarToast("Escala oficial carregada com sucesso e pronta para edição.", "success");
+                } else {
+                    mostrarToast("Nenhuma escala salva para este mês.", "warning");
+                }
+            } catch (err) { 
+                mostrarToast("Erro ao comunicar com o servidor.", "error"); 
+            }
         }
 
         function destravarMista(btn) {
@@ -236,12 +316,15 @@
 
         function adicionarEventoExtra() {
             const dia = parseInt(document.getElementById('dia-extra').value), nome = document.getElementById('nome-extra').value.toUpperCase();
-            if(!dia || !nome) return alert("Preencha o dia e o nome do evento.");
+            if(!dia || !nome) return mostrarToast("Preencha o dia e o nome do evento extra.", "warning");
             criarLinhaTr(nome, dia);
             const tbody = document.getElementById('corpo-tabela');
             const rows = Array.from(tbody.rows);
             rows.sort((a, b) => parseInt(a.cells[1].innerText) - parseInt(b.cells[1].innerText));
             rows.forEach(r => tbody.appendChild(r));
+            document.getElementById('dia-extra').value = '';
+            document.getElementById('nome-extra').value = '';
+            mostrarToast("Evento extra adicionado.", "success");
         }
 
         function criarLinhaTr(evento, dia) {
@@ -257,16 +340,17 @@
             const tr = select.closest('tr'), valor = select.value, tdMembros = tr.querySelector('.membros-td');
             tr.className = valor ? `bg-${valor}` : '';
             if (valor === 'MISTA') {
-                tdMembros.innerHTML = `<div class="mista-checkboxes"><label><input type="checkbox" value="A"> A</label><label><input type="checkbox" value="B"> B</label><label><input type="checkbox" value="C"> C</label><label><input type="checkbox" value="D"> D</label><label><input type="checkbox" value="E"> E</label><label><input type="checkbox" value="G"> G</label></div><small style="display:block; margin-top:5px; color:#000;">Sorteio ocorre ao salvar.</small>`;
+                tdMembros.innerHTML = `<div class="mista-checkboxes"><label><input type="checkbox" value="A"> A</label><label><input type="checkbox" value="B"> B</label><label><input type="checkbox" value="C"> C</label><label><input type="checkbox" value="D"> D</label><label><input type="checkbox" value="E"> E</label><label><input type="checkbox" value="G"> G</label></div><small style="display:block; margin-top:5px; color:#000;"><i class="fas fa-info-circle"></i> Sorteio ocorre ao salvar.</small>`;
             } else if (valor !== "") tdMembros.innerText = equipesDB[valor].join(', ');
             else tdMembros.innerText = "-";
         }
 
         async function salvarEscalaNoBanco() {
             const mesAno = document.getElementById('mesAno').value;
-            if(!mesAno) return alert("Selecione o mês base primeiro.");
+            if(!mesAno) return mostrarToast("Selecione o mês base primeiro.", "warning");
             const tbody = document.getElementById('corpo-tabela');
-            if(tbody.rows.length === 0) return;
+            if(tbody.rows.length === 0) return mostrarToast("A tabela está vazia. Gere o mês antes de salvar.", "warning");
+            
             const dadosEscala = [];
 
             for (let i = 0; i < tbody.rows.length; i++) {
@@ -276,7 +360,7 @@
 
                 if (select && valorEquipe === 'MISTA') {
                     const checkboxes = Array.from(tr.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-                    if (checkboxes.length < 2) return alert(`Escala Mista dia ${dia}: selecione no mínimo 2 equipes!`);
+                    if (checkboxes.length < 2) return mostrarToast(`Escala Mista dia ${dia}: selecione no mínimo 2 equipes!`, "error");
                     
                     let sorteados = [], poolPorEquipe = {};
                     checkboxes.forEach(e => poolPorEquipe[e] = equipesDB[e].filter(m => m !== "DANIEL"));
@@ -312,31 +396,40 @@
 
             try {
                 const response = await fetch('/api/escalas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesAno, dados: pacote }) });
-                if (response.ok) { alert("✅ Escala salva no banco de dados!"); document.getElementById('btn-excluir-admin').style.display = 'block'; }
-            } catch (err) { console.error(err); }
+                if (response.ok) { 
+                    mostrarToast("A Escala foi salva no banco de dados com sucesso!", "success"); 
+                    document.getElementById('btn-excluir-admin').style.display = 'inline-block'; 
+                }
+            } catch (err) { mostrarToast("Erro crítico ao salvar a escala.", "error"); }
         }
 
-        async function excluirEscala() {
+        // Função chamada pelo botão de excluir para abrir o Modal
+        function solicitarExclusao() {
             const mesAno = document.getElementById('mesAno').value;
-            if(!mesAno || !confirm("⚠️ Deseja excluir toda a escala deste mês do banco de dados?")) return;
-            try {
-                const response = await fetch(`/api/escalas/${mesAno}`, { method: 'DELETE' });
-                if (response.ok) {
-                    alert("🗑️ Escala excluída com sucesso.");
-                    document.getElementById('corpo-tabela').innerHTML = '';
-                    document.getElementById('feriados-lista').innerHTML = '';
-                    document.getElementById('aniversarios-lista').innerHTML = '';
-                    document.getElementById('obs-geral').value = '';
-                    document.getElementById('titulo-mes').innerText = 'SELECIONE UM MÊS';
-                    document.getElementById('btn-imprimir').style.display = 'none';
-                    document.getElementById('btn-excluir-admin').style.display = 'none';
-                }
-            } catch (err) { console.error(err); }
+            if(!mesAno) return mostrarToast("Selecione o mês que deseja excluir.", "warning");
+            
+            abrirConfirm(`Tem certeza que deseja excluir toda a escala do mês de ${mesAno} do banco de dados? Esta ação não pode ser desfeita.`, async () => {
+                try {
+                    const response = await fetch(`/api/escalas/${mesAno}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        mostrarToast("A escala foi excluída com sucesso.", "success");
+                        document.getElementById('corpo-tabela').innerHTML = '';
+                        document.getElementById('feriados-lista').innerHTML = '';
+                        document.getElementById('aniversarios-lista').innerHTML = '';
+                        document.getElementById('obs-geral').value = '';
+                        document.getElementById('titulo-mes').innerText = 'SELECIONE UM MÊS';
+                        document.getElementById('btn-imprimir').style.display = 'none';
+                        document.getElementById('btn-excluir-admin').style.display = 'none';
+                    } else {
+                        mostrarToast("Erro ao tentar excluir a escala.", "error");
+                    }
+                } catch (err) { mostrarToast("Erro de comunicação com o servidor.", "error"); }
+            });
         }
 
         async function buscarEscalaSalva(mesParam = null) {
             const mesAno = mesParam || document.getElementById('mesAnoLeitura').value;
-            if(!mesAno) return;
+            if(!mesAno) return mostrarToast("Selecione um mês válido para visualização.", "warning");
             const [ano, mes] = mesAno.split('-').map(Number);
 
             try {
@@ -360,8 +453,11 @@
                     
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                } else alert("Nenhuma escala oficial encontrada para este mês. Solicite aos Admins.");
-            } catch (err) { console.error(err); }
+                    mostrarToast("Escala carregada com sucesso.", "success");
+                } else {
+                    mostrarToast("Nenhuma escala oficial encontrada para este mês. Solicite aos Administradores.", "warning");
+                }
+            } catch (err) { mostrarToast("Erro ao buscar a escala no banco de dados.", "error"); }
         }
     </script>
 </body>
