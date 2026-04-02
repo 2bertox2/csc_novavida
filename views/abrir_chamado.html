@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abertura de Chamado - GLPI Live</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f7f6; display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar { width: 240px; background-color: #1a1a2e; color: white; display: flex; flex-direction: column; transition: 0.3s; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c44; }
+        .sidebar-header img { width: 120px; }
+        .nav-menu { flex: 1; padding: 10px 0; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #a2a2bd; text-decoration: none; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background-color: #e94560; color: white; }
+        .nav-item i { width: 20px; text-align: center; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
+        .header-title { margin-bottom: 30px; }
+        .header-title h2 { color: #333; font-size: 22px; }
+
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        .category-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .category-card:hover { border-color: #e94560; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .category-card i { font-size: 24px; color: #e94560; width: 40px; text-align: center; }
+        .category-card span { font-weight: 600; font-size: 14px; }
+
+        /* MODAL DE FORMULÁRIO INTERNO */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .close-btn:hover { color: #000; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; transition: 0.3s; font-family: 'Segoe UI', sans-serif; }
+        .form-group textarea:focus { border-color: #e94560; }
+        
+        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group label { margin: 0; cursor: pointer; font-size: 13px; color: #555; line-height: 1.4; }
+
+        .btn-submit { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-submit:hover { background: #d13d56; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/public/img/logo-igreja.png" alt="Logo" onerror="this.style.display='none'">
+        </div>
+        <nav class="nav-menu">
+            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
+            <a href="/chamados" class="nav-item active"><i class="fas fa-headset"></i> Assistência</a>
+            <a href="/escalas" class="nav-item"><i class="fas fa-calendar-alt"></i> Escalas</a>
+        </nav>
+    </div>
+
+    <main class="main-content">
+        <div class="header-title">
+            <h2>Selecione uma categoria para sua solicitação:</h2>
+            <p style="color: #666; font-size: 14px; margin-top: 5px;">Sua solicitação será registrada em seu nome e enviada para a equipe responsável.</p>
+        </div>
+
+        <div class="category-grid">
+            <a href="#" class="category-card" onclick="abrirFormulario('Artes e Mídia')"><i class="fas fa-paint-brush"></i> <span>Artes e Mídia</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Cortes de Vídeo')"><i class="fas fa-video"></i> <span>Cortes de Vídeo</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Transmissão / Live')"><i class="fas fa-broadcast-tower"></i> <span>Transmissão / Live</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Áudio / Microfones')"><i class="fas fa-microphone"></i> <span>Áudio / Microfones</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Internet / Rede')"><i class="fas fa-network-wired"></i> <span>Internet / Rede</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Software / App')"><i class="fas fa-laptop-code"></i> <span>Software / App</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Periféricos / Hardware')"><i class="fas fa-keyboard"></i> <span>Periféricos / Hardware</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Energia / Elétrica')"><i class="fas fa-bolt"></i> <span>Energia / Elétrica</span></a>
+            <a href="#" class="category-card" onclick="abrirFormulario('Outros Suportes')"><i class="fas fa-question-circle"></i> <span>Outros Suportes</span></a>
+        </div>
+    </main>
+
+    <div id="modal-solicitacao" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharFormulario()">&times;</span>
+            <h2 style="color: #e94560; margin-bottom: 5px;">Nova Solicitação</h2>
+            <p id="categoria-selecionada" style="background: #eee; display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 20px; color: #333;"></p>
+
+            <div class="form-group">
+                <label>Descreva o que você precisa:</label>
+                <textarea id="desc-chamado" rows="5" placeholder="Digite os detalhes da arte, os links de referência ou o problema técnico que está ocorrendo..." required></textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="tem-anexo">
+                <label for="tem-anexo"><strong>Tenho arquivos ou fotos referentes a este chamado.</strong><br>O responsável entrará em contato para recolher os anexos.</label>
+            </div>
+
+            <button class="btn-submit" onclick="registrarChamadoInterno()">Registrar Solicitação</button>
+        </div>
+    </div>
+
+    <script>
+        let categoriaAtual = '';
+        let usuarioLogado = null;
+
+        window.onload = () => {
+            const userStore = localStorage.getItem('usuarioLogado');
+            if (!userStore) {
+                alert("Sessão expirada. Faça login novamente.");
+                window.location.href = '/';
+                return;
+            }
+            usuarioLogado = JSON.parse(userStore);
+        };
+
+        function abrirFormulario(categoria) {
+            categoriaAtual = categoria;
+            document.getElementById('categoria-selecionada').innerText = `Categoria: ${categoria}`;
+            document.getElementById('desc-chamado').value = '';
+            document.getElementById('tem-anexo').checked = false;
+            document.getElementById('modal-solicitacao').style.display = 'flex';
+        }
+
+        function fecharFormulario() {
+            document.getElementById('modal-solicitacao').style.display = 'none';
+        }
+
+        async function registrarChamadoInterno() {
+            const descricao = document.getElementById('desc-chamado').value;
+            const temAnexo = document.getElementById('tem-anexo').checked;
+
+            if (!descricao) {
+                alert("Por favor, descreva o que você precisa no campo de texto.");
+                return;
+            }
+
+            // O pulo do gato: Coloca o nome e o perfil (Admin, Lider, Membro) na identificação
+            const requerenteFinal = `${usuarioLogado.user} [${usuarioLogado.perfil}]`;
+            
+            let descricaoFinal = `📝 Detalhes da Solicitação:\n${descricao}`;
+            if (temAnexo) {
+                descricaoFinal += `\n\n🚨 ATENÇÃO: O solicitante interno possui arquivos/fotos. Entre em contato para recolher.`;
+            }
+
+            const dadosChamado = {
+                titulo: `Solicitação Interna: ${categoriaAtual}`,
+                categoria: categoriaAtual,
+                prioridade: "Média",
+                requerente: requerenteFinal,
+                descricao: descricaoFinal,
+                progresso: 100
+            };
+
+            const btn = document.querySelector('.btn-submit');
+            btn.innerText = 'Registrando...';
+            btn.disabled = true;
+
+            try {
+                const resposta = await fetch('/api/chamados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosChamado)
+                });
+
+                if (resposta.ok) {
+                    alert("✅ Chamado interno registrado com sucesso!");
+                    window.location.href = '/chamados'; 
+                } else {
+                    alert("❌ Erro ao registrar chamado.");
+                    btn.innerText = 'Registrar Solicitação';
+                    btn.disabled = false;
+                }
+            } catch (erro) {
+                alert("❌ Erro de conexão com o servidor.");
+                btn.innerText = 'Registrar Solicitação';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
