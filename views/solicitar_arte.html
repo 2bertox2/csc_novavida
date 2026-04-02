@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Arte - CSC Live</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #1a1a2e; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .form-container { background: #16213e; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 500px; border-top: 4px solid #e94560; }
+        .form-header { text-align: center; margin-bottom: 25px; }
+        .form-header img { max-width: 120px; margin-bottom: 10px; }
+        .form-header h2 { color: #e94560; font-size: 22px; }
+        .form-header p { color: #a2a2bd; font-size: 14px; margin-top: 5px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #0f3460; background: #1a1a2e; color: #fff; outline: none; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #e94560; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #0f3460; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+        .checkbox-group label { margin: 0; cursor: pointer; font-size: 13px; color: #a2a2bd; }
+        .btn-submit { width: 100%; padding: 15px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-submit:hover { background: #d13d56; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container" id="form-area">
+        <div class="form-header">
+            <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH">
+            <h2>Central de Mídia</h2>
+            <p>Faça sua solicitação de arte para cultos ou eventos.</p>
+        </div>
+
+        <div class="form-group">
+            <label>Seu Nome / Ministério</label>
+            <input type="text" id="nomeReq" placeholder="Ex: João - Ministério de Jovens" required>
+        </div>
+
+        <div class="form-group">
+            <label>WhatsApp para Contato</label>
+            <input type="text" id="whatsappReq" placeholder="(XX) XXXXX-XXXX" required>
+        </div>
+
+        <div class="form-group">
+            <label>Detalhes da Arte (Texto, Cores, Tema)</label>
+            <textarea id="descricaoReq" rows="4" placeholder="Descreva como você imagina a arte..." required></textarea>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="anexosReq">
+            <label for="anexosReq"><strong>Tenho arquivos/fotos para enviar.</strong><br>A equipe entrará em contato pelo seu WhatsApp para solicitar os arquivos.</label>
+        </div>
+
+        <button class="btn-submit" onclick="enviarSolicitacao()">Enviar Solicitação</button>
+    </div>
+
+    <script>
+        async function enviarSolicitacao() {
+            const nome = document.getElementById('nomeReq').value;
+            const zap = document.getElementById('whatsappReq').value;
+            const desc = document.getElementById('descricaoReq').value;
+            const temAnexo = document.getElementById('anexosReq').checked;
+
+            if (!nome || !zap || !desc) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            let descricaoFinal = `WhatsApp: ${zap}\n\nDetalhes: ${desc}`;
+            if (temAnexo) {
+                descricaoFinal += `\n\n🚨 ATENÇÃO: O solicitante possui arquivos/fotos. Chamar no WhatsApp para recolher.`;
+            }
+
+            const dadosChamado = {
+                titulo: `Arte Externa: ${nome}`,
+                categoria: "Arte para Culto/Evento",
+                prioridade: "Média",
+                requerente: nome,
+                descricao: descricaoFinal,
+                progresso: 100
+            };
+
+            try {
+                const response = await fetch('/api/chamados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosChamado)
+                });
+
+                if (response.ok) {
+                    document.getElementById('form-area').innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <h2 style="color: #28a745; margin-bottom: 15px;">✅ Solicitação Enviada!</h2>
+                            <p style="color: #a2a2bd;">Sua solicitação foi registrada no CSC Live. Nossa equipe analisará o pedido e entrará em contato no WhatsApp informado.</p>
+                        </div>
+                    `;
+                }
+            } catch (erro) {
+                alert("Erro de conexão ao tentar enviar a solicitação.");
+            }
+        }
+    </script>
+</body>
+</html>
