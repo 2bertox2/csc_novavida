@@ -38,15 +38,39 @@
         .progress-container { width: 100px; background: #eee; height: 8px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
         .progress-bar { height: 100%; background: #28a745; transition: 0.5s; }
         .progress-text { font-size: 10px; font-weight: bold; display: block; }
-        .btn-new { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-acao { padding: 6px 12px; background: #007AFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .btn-new { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .btn-new:hover { background: #d13d56; }
+        .btn-acao { padding: 6px 12px; background: #007AFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .btn-acao:hover { filter: brightness(0.9); }
         .form-user { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px;}
         .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #e94560; }
         
-        /* ESTILOS DO MODAL (JANELA DE DETALHES) */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        /* SISTEMA DE NOTIFICAÇÕES (TOAST) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
+        .toast i { font-size: 20px; }
+        .toast.success { border-left-color: #28a745; }
+        .toast.success i { color: #28a745; }
+        .toast.warning { border-left-color: #ffc107; }
+        .toast.warning i { color: #ffc107; }
+        .toast.error { border-left-color: #dc3545; }
+        .toast.error i { color: #dc3545; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+        /* MODAL CUSTOMIZADO (CONFIRMAÇÃO) */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content-confirm { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: scaleUp 0.2s ease forwards; }
+        .modal-content-confirm i { font-size: 50px; color: #dc3545; margin-bottom: 15px; display: block; }
+        .modal-content-confirm h3 { color: #333; margin-bottom: 10px; font-size: 20px; }
+        .modal-content-confirm p { color: #666; margin-bottom: 25px; font-size: 14px; }
+        .modal-btns { display: flex; gap: 15px; justify-content: center; }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* MODAL DE DETALHES DO CHAMADO */
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: scaleUp 0.2s ease forwards; }
         .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
         .close-btn:hover { color: #000; }
         .desc-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin: 15px 0; white-space: pre-wrap; font-size: 14px; color: #333; max-height: 200px; overflow-y: auto; }
@@ -55,9 +79,66 @@
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
+    <div id="custom-confirm" class="modal">
+        <div class="modal-content-confirm">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Atenção</h3>
+            <p id="confirm-msg">Deseja realmente continuar com esta ação?</p>
+            <div class="modal-btns">
+                <button onclick="fecharConfirm()" class="btn-new" style="background: #6c757d; flex: 1;">Cancelar</button>
+                <button id="btn-confirm-yes" class="btn-new" style="background: #dc3545; flex: 1;">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-chamado" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal()">&times;</span>
+            <h2 id="modal-titulo" style="color: #e94560; margin-bottom: 5px;">Título do Chamado</h2>
+            <span id="modal-categoria" style="background: #eee; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Categoria</span>
+            
+            <div class="modal-infos">
+                <div>
+                    <p style="font-size: 13px; color: #666;">Requerente:</p>
+                    <strong id="modal-req">Nome</strong>
+                </div>
+                <div>
+                    <p style="font-size: 13px; color: #666;">Atribuído a:</p>
+                    <strong id="modal-atrib" style="color: #007AFF;">-</strong>
+                </div>
+            </div>
+
+            <div class="desc-box" id="modal-desc">
+                Aqui vai aparecer a descrição completa da arte e os dados.
+            </div>
+
+            <div class="modal-infos" style="align-items: flex-end; background: #f4f7f6; padding: 15px; border-radius: 6px;">
+                <div class="form-group" style="width: 100%;">
+                    <label>Status do Chamado:</label>
+                    <select id="modal-status">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Em Andamento">Em Andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Progresso Restante (%):</label>
+                    <input type="number" id="modal-progresso" min="0" max="100">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn-new" onclick="assumirChamado()" style="background: #333; flex: 1;"><i class="fas fa-hand-paper"></i> Assumir</button>
+                <button class="btn-new" onclick="salvarEdicaoChamado()" style="background: #28a745; flex: 2;"><i class="fas fa-save"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar">
         <div class="sidebar-header">
-            <img src="/public/img/logo-igreja.png" alt="Logo">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
         </div>
         <nav class="nav-menu">
             <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
@@ -87,7 +168,7 @@
             <div id="aba-helpdesk" class="tab-content active">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>Quadro de Chamados / Solicitações</h2>
-                    <a href="/abrir-chamado" class="btn-new">+ Novo Chamado Interno</a>
+                    <a href="/abrir-chamado" class="btn-new"><i class="fas fa-plus"></i> Novo Chamado Interno</a>
                 </div>
                 <div class="card-table">
                     <table>
@@ -117,7 +198,7 @@
                         <select id="novo-perfil"><option value="MEMBRO">Membro</option><option value="LIDER">Líder</option><option value="ADMIN">Admin</option></select>
                     </div>
                     <div class="form-group"><label>Equipe (A-G):</label><input type="text" id="nova-equipe" placeholder="ex: C" style="width: 80px;"></div>
-                    <button class="btn-new" onclick="criarUsuario()" style="height: 40px; margin-bottom: 2px;">+ Adicionar</button>
+                    <button class="btn-new" onclick="criarUsuario()" style="height: 40px; margin-bottom: 2px;"><i class="fas fa-user-plus"></i> Adicionar</button>
                 </div>
                 <div class="card-table">
                     <table>
@@ -133,7 +214,7 @@
                     <div class="form-group"><label>Nome do Membro:</label><input type="text" id="niver-nome" placeholder="Nome Completo"></div>
                     <div class="form-group"><label>Dia:</label><input type="number" id="niver-dia" min="1" max="31" style="width: 80px;"></div>
                     <div class="form-group"><label>Mês:</label><input type="number" id="niver-mes" min="1" max="12" style="width: 80px;"></div>
-                    <button class="btn-new" onclick="criarAniversario()" style="height: 40px; margin-bottom: 2px;">+ Adicionar Data</button>
+                    <button class="btn-new" onclick="criarAniversario()" style="height: 40px; margin-bottom: 2px;"><i class="fas fa-calendar-plus"></i> Adicionar Data</button>
                 </div>
                 <div class="card-table">
                     <table>
@@ -145,53 +226,42 @@
         </div>
     </div>
 
-    <div id="modal-chamado" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="fecharModal()">&times;</span>
-            <h2 id="modal-titulo" style="color: #e94560; margin-bottom: 5px;">Título do Chamado</h2>
-            <span id="modal-categoria" style="background: #eee; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Categoria</span>
-            
-            <div class="modal-infos">
-                <div>
-                    <p style="font-size: 13px; color: #666;">Requerente:</p>
-                    <strong id="modal-req">Nome</strong>
-                </div>
-                <div>
-                    <p style="font-size: 13px; color: #666;">Atribuído a:</p>
-                    <strong id="modal-atrib" style="color: #007AFF;">-</strong>
-                </div>
-            </div>
-
-            <div class="desc-box" id="modal-desc">
-                Aqui vai aparecer a descrição completa da arte e os dados do QR Code.
-            </div>
-
-            <div class="modal-infos" style="align-items: flex-end; background: #f4f7f6; padding: 15px; border-radius: 6px;">
-                <div class="form-group" style="width: 100%;">
-                    <label>Status do Chamado:</label>
-                    <select id="modal-status">
-                        <option value="Pendente">Pendente</option>
-                        <option value="Em Andamento">Em Andamento</option>
-                        <option value="Concluído">Concluído</option>
-                    </select>
-                </div>
-                <div class="form-group" style="width: 100%;">
-                    <label>Progresso Restante (%):</label>
-                    <input type="number" id="modal-progresso" min="0" max="100">
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <button class="btn-new" onclick="assumirChamado()" style="background: #333; flex: 1;"><i class="fas fa-hand-paper"></i> Assumir Chamado</button>
-                <button class="btn-new" onclick="salvarEdicaoChamado()" style="background: #28a745; flex: 2;">💾 Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let usuarioAtual = null;
-        let chamadosGlobais = []; // Guarda todos os chamados carregados para abrir no modal
-        let idChamadoAtual = null; // Guarda o ID do chamado que está aberto no modal
+        let chamadosGlobais = []; 
+        let idChamadoAtual = null; 
+        let callbackConfirmacao = null;
+
+        function mostrarToast(mensagem, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            let icon = '<i class="fas fa-check-circle"></i>';
+            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
+            if(tipo === 'warning') icon = '<i class="fas fa-exclamation-circle"></i>';
+            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function abrirConfirm(mensagem, acao) {
+            document.getElementById('confirm-msg').innerText = mensagem;
+            document.getElementById('custom-confirm').style.display = 'flex';
+            callbackConfirmacao = acao;
+        }
+
+        function fecharConfirm() {
+            document.getElementById('custom-confirm').style.display = 'none';
+            callbackConfirmacao = null;
+        }
+
+        document.getElementById('btn-confirm-yes').addEventListener('click', () => {
+            if(callbackConfirmacao) callbackConfirmacao();
+            fecharConfirm();
+        });
 
         window.onload = () => {
             const userStore = localStorage.getItem('usuarioLogado');
@@ -227,7 +297,7 @@
         async function carregarChamadosDoBanco() {
             try {
                 const resposta = await fetch('/api/chamados');
-                chamadosGlobais = await resposta.json(); // Guarda na memória
+                chamadosGlobais = await resposta.json(); 
                 
                 const tbody = document.getElementById('lista-chamados-body');
                 tbody.innerHTML = '';
@@ -246,10 +316,9 @@
                     `;
                     tbody.appendChild(tr);
                 });
-            } catch (erro) { console.error(erro); }
+            } catch (erro) { mostrarToast("Erro ao carregar os chamados.", "error"); }
         }
 
-        // --- LÓGICA DO MODAL ---
         function abrirModal(id) {
             idChamadoAtual = id;
             const chamado = chamadosGlobais.find(c => c.id === id);
@@ -258,7 +327,7 @@
             document.getElementById('modal-categoria').innerText = chamado.categoria;
             document.getElementById('modal-req').innerText = chamado.requerente;
             document.getElementById('modal-atrib').innerText = chamado.atribuido;
-            document.getElementById('modal-desc').innerText = chamado.descricao; // Preserva as quebras de linha
+            document.getElementById('modal-desc').innerText = chamado.descricao; 
             
             document.getElementById('modal-status').value = chamado.status;
             document.getElementById('modal-progresso').value = chamado.progresso;
@@ -273,6 +342,7 @@
         function assumirChamado() {
             document.getElementById('modal-atrib').innerText = usuarioAtual.user;
             document.getElementById('modal-status').value = 'Em Andamento';
+            mostrarToast("Chamado atribuído a você.", "success");
         }
 
         async function salvarEdicaoChamado() {
@@ -289,16 +359,16 @@
 
                 if (response.ok) {
                     fecharModal();
-                    carregarChamadosDoBanco(); // Recarrega a tabela atualizada
+                    carregarChamadosDoBanco(); 
+                    mostrarToast("Chamado atualizado com sucesso!", "success");
                 } else {
-                    alert("Erro ao atualizar o chamado.");
+                    mostrarToast("Erro ao atualizar o chamado.", "error");
                 }
             } catch (err) {
-                console.error(err);
+                mostrarToast("Erro de comunicação com o servidor.", "error");
             }
         }
 
-        // --- LÓGICA DE USUÁRIOS E ANIVERSÁRIOS ---
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
@@ -314,17 +384,26 @@
         async function criarUsuario() {
             const user = document.getElementById('novo-user').value, senha = document.getElementById('nova-senha').value;
             const perfil = document.getElementById('novo-perfil').value, equipe = document.getElementById('nova-equipe').value || 'NENHUMA';
-            if(!user || !senha) return alert("Preencha Usuário e Senha.");
+            if(!user || !senha) return mostrarToast("Preencha Usuário e Senha.", "warning");
             try {
                 const res = await fetch('/api/usuarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user, senha, perfil, equipe }) });
-                if (res.ok) { alert("✅ Usuário criado!"); carregarUsuarios(); } else alert("Erro. Usuário já existe.");
-            } catch (err) { console.error(err); }
+                if (res.ok) { 
+                    mostrarToast("Usuário criado com sucesso!", "success"); 
+                    carregarUsuarios(); 
+                    document.getElementById('novo-user').value = '';
+                    document.getElementById('nova-senha').value = '';
+                } else {
+                    mostrarToast("Erro. Este usuário já existe.", "error");
+                }
+            } catch (err) { mostrarToast("Erro de comunicação.", "error"); }
         }
 
-        async function deletarUsuario(id) {
-            if(!confirm("Excluir usuário?")) return;
-            await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
-            carregarUsuarios();
+        function deletarUsuario(id) {
+            abrirConfirm("Deseja realmente excluir o acesso deste usuário?", async () => {
+                await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+                mostrarToast("Usuário excluído com sucesso.", "success");
+                carregarUsuarios();
+            });
         }
 
         async function carregarAniversarios() {
@@ -341,17 +420,25 @@
 
         async function criarAniversario() {
             const nome = document.getElementById('niver-nome').value, dia = document.getElementById('niver-dia').value, mes = document.getElementById('niver-mes').value;
-            if(!nome || !dia || !mes) return alert("Preencha todos os campos.");
+            if(!nome || !dia || !mes) return mostrarToast("Preencha todos os campos do aniversário.", "warning");
             try {
                 const res = await fetch('/api/aniversarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, dia, mes }) });
-                if (res.ok) { alert("✅ Aniversário registrado!"); carregarAniversarios(); }
-            } catch (err) { console.error(err); }
+                if (res.ok) { 
+                    mostrarToast("Aniversário registrado com sucesso!", "success"); 
+                    carregarAniversarios(); 
+                    document.getElementById('niver-nome').value = '';
+                    document.getElementById('niver-dia').value = '';
+                    document.getElementById('niver-mes').value = '';
+                }
+            } catch (err) { mostrarToast("Erro ao registrar aniversário.", "error"); }
         }
 
-        async function deletarAniversario(id) {
-            if(!confirm("Excluir data?")) return;
-            await fetch(`/api/aniversarios/${id}`, { method: 'DELETE' });
-            carregarAniversarios();
+        function deletarAniversario(id) {
+            abrirConfirm("Deseja realmente excluir esta data de aniversário?", async () => {
+                await fetch(`/api/aniversarios/${id}`, { method: 'DELETE' });
+                mostrarToast("Data excluída com sucesso.", "success");
+                carregarAniversarios();
+            });
         }
     </script>
 </body>
