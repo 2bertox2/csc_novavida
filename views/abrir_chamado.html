@@ -28,9 +28,8 @@
         .category-card i { font-size: 24px; color: #e94560; width: 40px; text-align: center; }
         .category-card span { font-weight: 600; font-size: 14px; }
 
-        /* MODAL DE FORMULÁRIO INTERNO */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: scaleUp 0.2s ease forwards;}
         .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
         .close-btn:hover { color: #000; }
         
@@ -45,13 +44,30 @@
 
         .btn-submit { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-submit:hover { background: #d13d56; }
+        
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* SISTEMA DE NOTIFICAÇÕES (TOAST) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
+        .toast i { font-size: 20px; }
+        .toast.success { border-left-color: #28a745; }
+        .toast.success i { color: #28a745; }
+        .toast.warning { border-left-color: #ffc107; }
+        .toast.warning i { color: #ffc107; }
+        .toast.error { border-left-color: #dc3545; }
+        .toast.error i { color: #dc3545; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
     <div class="sidebar">
         <div class="sidebar-header">
-            <img src="/public/img/logo-igreja.png" alt="Logo" onerror="this.style.display='none'">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
         </div>
         <nav class="nav-menu">
             <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
@@ -103,10 +119,24 @@
         let categoriaAtual = '';
         let usuarioLogado = null;
 
+        function mostrarToast(mensagem, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            let icon = '<i class="fas fa-check-circle"></i>';
+            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
+            if(tipo === 'warning') icon = '<i class="fas fa-exclamation-circle"></i>';
+            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         window.onload = () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) {
-                alert("Sessão expirada. Faça login novamente.");
                 window.location.href = '/';
                 return;
             }
@@ -130,11 +160,10 @@
             const temAnexo = document.getElementById('tem-anexo').checked;
 
             if (!descricao) {
-                alert("Por favor, descreva o que você precisa no campo de texto.");
+                mostrarToast("Por favor, descreva o que você precisa no campo de texto.", "warning");
                 return;
             }
 
-            // O pulo do gato: Coloca o nome e o perfil (Admin, Lider, Membro) na identificação
             const requerenteFinal = `${usuarioLogado.user} [${usuarioLogado.perfil}]`;
             
             let descricaoFinal = `📝 Detalhes da Solicitação:\n${descricao}`;
@@ -163,15 +192,17 @@
                 });
 
                 if (resposta.ok) {
-                    alert("✅ Chamado interno registrado com sucesso!");
-                    window.location.href = '/chamados'; 
+                    mostrarToast("Chamado interno registrado com sucesso!", "success");
+                    setTimeout(() => {
+                        window.location.href = '/chamados'; 
+                    }, 1500);
                 } else {
-                    alert("❌ Erro ao registrar chamado.");
+                    mostrarToast("Erro ao registrar chamado.", "error");
                     btn.innerText = 'Registrar Solicitação';
                     btn.disabled = false;
                 }
             } catch (erro) {
-                alert("❌ Erro de conexão com o servidor.");
+                mostrarToast("Erro de conexão com o servidor.", "error");
                 btn.innerText = 'Registrar Solicitação';
                 btn.disabled = false;
             }
