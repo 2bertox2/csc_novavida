@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitação de Arte - CSC Live</title>
+    <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #1a1a2e; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -29,6 +31,19 @@
         .btn-submit { width: 100%; padding: 15px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-submit:hover { background: #d13d56; transform: translateY(-2px); }
         
+        /* SISTEMA DE NOTIFICAÇÕES (TOAST) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
+        .toast i { font-size: 20px; }
+        .toast.success { border-left-color: #28a745; }
+        .toast.success i { color: #28a745; }
+        .toast.warning { border-left-color: #ffc107; }
+        .toast.warning i { color: #ffc107; }
+        .toast.error { border-left-color: #dc3545; }
+        .toast.error i { color: #dc3545; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
         @media (max-width: 500px) {
             .row { flex-direction: column; gap: 0; }
         }
@@ -36,9 +51,11 @@
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
     <div class="form-container" id="form-area">
         <div class="form-header">
-            <img src="/public/img/logo-igreja.png" alt="Logo Nova Vida BH" onerror="this.style.display='none'">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo Nova Vida BH" onerror="this.style.display='none'">
             <h2>Central de Mídia</h2>
             <p>Preencha os dados abaixo para solicitar sua arte.</p>
         </div>
@@ -79,6 +96,21 @@
     </div>
 
     <script>
+        function mostrarToast(mensagem, tipo = 'warning') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            let icon = '<i class="fas fa-exclamation-circle"></i>';
+            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
+            if(tipo === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         async function enviarSolicitacao() {
             const nome = document.getElementById('nomeReq').value;
             const ministerio = document.getElementById('minReq').value;
@@ -88,11 +120,10 @@
             const temAnexo = document.getElementById('anexosReq').checked;
 
             if (!nome || !ministerio || !email || !zap || !desc) {
-                alert("Por favor, preencha todos os campos obrigatórios antes de enviar.");
+                mostrarToast("Por favor, preencha todos os campos obrigatórios antes de enviar.", "warning");
                 return;
             }
 
-            // Formata a descrição para ficar bonita lá no painel de chamados do Admin
             let descricaoFinal = `📍 Ministério: ${ministerio}\n📧 E-mail: ${email}\n📱 WhatsApp: ${zap}\n\n📝 O que deseja criar:\n${desc}`;
             
             if (temAnexo) {
@@ -131,7 +162,7 @@
                     `;
                 }
             } catch (erro) {
-                alert("Erro de conexão ao tentar enviar a solicitação. Verifique sua internet.");
+                mostrarToast("Erro de conexão ao tentar enviar a solicitação. Verifique sua internet.", "error");
                 btn.innerText = 'Enviar Solicitação';
                 btn.disabled = false;
             }
