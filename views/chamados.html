@@ -10,7 +10,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: #121220; color: #fff; padding-bottom: 30px; overflow-x: hidden; }
         
-        /* CABEÇALHO PADRÃO APP */
         .app-header { display: flex; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; gap: 15px; }
         .btn-voltar { color: #a2a2bd; text-decoration: none; font-size: 20px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: 0.3s;}
         .btn-voltar:active { transform: scale(0.9); }
@@ -18,7 +17,6 @@
 
         .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
 
-        /* SISTEMA DE ABAS (TABS) PARA MOBILE */
         .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
         .tab-btn { flex: 1; min-width: 120px; padding: 14px; background: #16213e; border: 1px solid rgba(255,255,255,0.05); color: #a2a2bd; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.3s; white-space: nowrap;}
         .tab-btn.active { background: #e94560; color: #fff; border-color: #e94560; box-shadow: 0 4px 10px rgba(233, 69, 96, 0.3);}
@@ -27,7 +25,6 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ÁREA DE CONTEÚDO E TABELAS */
         .content-card { background: #fff; padding: 20px; border-radius: 16px; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px;}
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;}
         .section-header h2 { font-size: 18px; text-transform: uppercase; color: #333;}
@@ -40,31 +37,34 @@
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
         th { background: #f8f9fa; text-transform: uppercase; font-weight: 800; color: #333;}
         
-        /* STATUS BADGES */
         .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #fff;}
         .bg-pendente { background-color: #dc3545; }
         .bg-andamento { background-color: #f39c12; }
         .bg-concluido { background-color: #28a745; }
 
-        .btn-sm { padding: 6px 10px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12px; font-weight: bold;}
+        .btn-sm { padding: 8px 12px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;}
         .btn-edit { background-color: #007AFF; }
         .btn-delete { background-color: #dc3545; }
 
-        /* TOAST E MODAL */
         #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
         .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px;}
-        .modal-content { background-color: #16213e; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; border: 1px solid rgba(255,255,255,0.1); color: #fff;}
+        .modal-content { background-color: #16213e; padding: 25px; border-radius: 16px; width: 100%; max-width: 450px; position: relative; border: 1px solid rgba(255,255,255,0.1); color: #fff; max-height: 90vh; overflow-y: auto;}
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; font-weight: bold; color: #a2a2bd; cursor: pointer; }
         
+        /* CAIXA DE DETALHES DO CHAMADO */
+        .info-box { background: #1a1a2e; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .info-box p { margin-bottom: 8px; font-size: 14px; color: #a2a2bd; }
+        .info-box span { color: #fff; font-weight: bold; }
+        .desc-box { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; color: #fff; white-space: pre-wrap; font-size: 14px; margin-top: 5px; border: 1px dashed rgba(255,255,255,0.1); line-height: 1.5;}
+
         .form-group { margin-bottom: 15px; text-align: left;}
         .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #a2a2bd; }
         .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #fff; outline: none; font-size: 14px;}
         .btn-salvar-modal { width: 100%; padding: 14px; background: #e94560; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px;}
 
-        /* BARRA DE PROGRESSO */
         .progress-container { width: 100%; background: #eee; border-radius: 10px; overflow: hidden; height: 8px; margin-top: 5px;}
         .progress-bar { height: 100%; background: #28a745; transition: 0.4s; }
 
@@ -151,25 +151,37 @@
     <div id="modal-chamado" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="fecharModal('modal-chamado')">&times;</span>
-            <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-edit"></i> Atualizar Chamado</h2>
-            <input type="hidden" id="edit-chamado-id">
-            <div class="form-group">
-                <label>Status:</label>
-                <select id="edit-status">
-                    <option value="Pendente">Pendente</option>
-                    <option value="Em Andamento">Em Andamento</option>
-                    <option value="Concluído">Concluído</option>
-                </select>
+            <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-clipboard-list"></i> Detalhes da Solicitação</h2>
+            
+            <div class="info-box">
+                <p>Requerente: <span id="det-req"></span></p>
+                <p>Categoria: <span id="det-cat"></span></p>
+                <p>Prioridade: <span id="det-pri"></span></p>
+                <p style="margin-top: 15px; color:#fff; font-weight:bold;">Descrição do Pedido:</p>
+                <div class="desc-box" id="det-desc"></div>
             </div>
-            <div class="form-group">
-                <label>Progresso (%):</label>
-                <input type="number" id="edit-progresso" min="0" max="100">
+
+            <div id="area-admin-update" style="display: none; margin-top: 25px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 20px;">
+                <h3 style="font-size: 14px; margin-bottom: 15px; color: #007AFF;"><i class="fas fa-tools"></i> Controles do Administrador</h3>
+                <input type="hidden" id="edit-chamado-id">
+                <div class="form-group">
+                    <label>Status Atual:</label>
+                    <select id="edit-status">
+                        <option value="Pendente">Pendente</option>
+                        <option value="Em Andamento">Em Andamento</option>
+                        <option value="Concluído">Concluído</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Progresso (%):</label>
+                    <input type="number" id="edit-progresso" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Técnico Responsável:</label>
+                    <input type="text" id="edit-atribuido" placeholder="Nome do técnico (ou deixe vazio)">
+                </div>
+                <button class="btn-salvar-modal" onclick="salvarEdicaoChamado()"><i class="fas fa-save"></i> Salvar Alterações</button>
             </div>
-            <div class="form-group">
-                <label>Atribuir a:</label>
-                <input type="text" id="edit-atribuido" placeholder="Nome do técnico">
-            </div>
-            <button class="btn-salvar-modal" onclick="salvarEdicaoChamado()">Atualizar Ticket</button>
         </div>
     </div>
 
@@ -179,14 +191,8 @@
             <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-user-plus"></i> Novo Membro</h2>
             <div class="form-group"><label>Usuário (Login):</label><input type="text" id="novo-user" placeholder="ex: joao.silva"></div>
             <div class="form-group"><label>Senha:</label><input type="password" id="novo-senha"></div>
-            <div class="form-group">
-                <label>Perfil:</label>
-                <select id="novo-perfil"><option value="MEMBRO">Membro</option><option value="LIDER">Líder</option><option value="ADMIN">Administrador</option></select>
-            </div>
-            <div class="form-group">
-                <label>Equipe (Letra):</label>
-                <input type="text" id="novo-equipe" placeholder="A, B, C... ou NENHUMA" maxlength="10">
-            </div>
+            <div class="form-group"><label>Perfil:</label><select id="novo-perfil"><option value="MEMBRO">Membro</option><option value="LIDER">Líder</option><option value="ADMIN">Administrador</option></select></div>
+            <div class="form-group"><label>Equipe (Letra):</label><input type="text" id="novo-equipe" placeholder="A, B, C... ou NENHUMA" maxlength="10"></div>
             <button class="btn-salvar-modal" onclick="salvarUsuario()">Cadastrar</button>
         </div>
     </div>
@@ -204,6 +210,7 @@
 
     <script>
         let usuarioAtual = null;
+        let listaChamadosGlobal = []; // Variável mágica que guarda as descrições em memória
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -220,15 +227,10 @@
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
 
-            if (usuarioAtual.perfil === 'ADMIN') {
-                document.getElementById('admin-tabs').style.display = 'flex';
-            }
+            if (usuarioAtual.perfil === 'ADMIN') document.getElementById('admin-tabs').style.display = 'flex';
             
             carregarChamados();
-            if(usuarioAtual.perfil === 'ADMIN'){
-                carregarUsuarios();
-                carregarAniversarios();
-            }
+            if(usuarioAtual.perfil === 'ADMIN'){ carregarUsuarios(); carregarAniversarios(); }
         };
 
         function mudarAba(abaId, btn) {
@@ -240,20 +242,18 @@
 
         function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        // ================= ROTINAS DE CHAMADOS =================
         async function carregarChamados() {
             try {
                 const res = await fetch('/api/chamados');
-                const chamados = await res.json();
+                listaChamadosGlobal = await res.json(); // Salva a lista inteira na memória
                 const tbody = document.querySelector('#tabela-chamados tbody');
                 tbody.innerHTML = '';
                 
-                chamados.forEach(c => {
+                listaChamadosGlobal.forEach(c => {
                     let corBadge = c.status === 'Concluído' ? 'bg-concluido' : (c.status === 'Em Andamento' ? 'bg-andamento' : 'bg-pendente');
-                    let botoes = '';
-                    if (usuarioAtual.perfil === 'ADMIN') {
-                        botoes = `<button class="btn-sm btn-edit" onclick="abrirEdicaoChamado(${c.id}, '${c.status}', ${c.progresso}, '${c.atribuido}')"><i class="fas fa-edit"></i> Atualizar</button>`;
-                    }
+                    
+                    // Botão agora se chama "Abrir / Ver" para todos
+                    let botoes = `<button class="btn-sm btn-edit" onclick="abrirDetalhesChamado(${c.id})"><i class="fas fa-external-link-alt"></i> Abrir</button>`;
 
                     tbody.innerHTML += `
                         <tr>
@@ -275,11 +275,28 @@
             } catch (err) { console.log(err); }
         }
 
-        function abrirEdicaoChamado(id, status, progresso, atribuido) {
-            document.getElementById('edit-chamado-id').value = id;
-            document.getElementById('edit-status').value = status;
-            document.getElementById('edit-progresso').value = progresso;
-            document.getElementById('edit-atribuido').value = atribuido === '-' ? '' : atribuido;
+        // FUNÇÃO QUE ABRE O CHAMADO E MOSTRA A DESCRIÇÃO
+        function abrirDetalhesChamado(id) {
+            const chamado = listaChamadosGlobal.find(c => c.id === id);
+            if(!chamado) return;
+
+            // Preenche os textos de leitura
+            document.getElementById('det-req').innerText = chamado.requerente;
+            document.getElementById('det-cat').innerText = chamado.categoria;
+            document.getElementById('det-pri').innerText = chamado.prioridade;
+            document.getElementById('det-desc').innerText = chamado.descricao;
+
+            // Se for admin, libera os botões de edição também
+            if (usuarioAtual && usuarioAtual.perfil === 'ADMIN') {
+                document.getElementById('area-admin-update').style.display = 'block';
+                document.getElementById('edit-chamado-id').value = chamado.id;
+                document.getElementById('edit-status').value = chamado.status;
+                document.getElementById('edit-progresso').value = chamado.progresso;
+                document.getElementById('edit-atribuido').value = chamado.atribuido === '-' ? '' : chamado.atribuido;
+            } else {
+                document.getElementById('area-admin-update').style.display = 'none';
+            }
+
             document.getElementById('modal-chamado').style.display = 'flex';
         }
 
@@ -291,25 +308,21 @@
                 atribuido: document.getElementById('edit-atribuido').value || '-'
             };
 
-            const btn = document.querySelector('#modal-chamado .btn-salvar-modal');
+            const btn = document.querySelector('#area-admin-update .btn-salvar-modal');
             btn.innerText = "Salvando...";
 
             try {
-                const res = await fetch(`/api/chamados/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                const res = await fetch(`/api/chamados/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if(res.ok) {
                     mostrarToast("Ticket atualizado!", "success");
                     fecharModal('modal-chamado');
                     carregarChamados();
                 }
             } catch (err) { mostrarToast("Erro ao salvar.", "error"); }
-            btn.innerText = "Atualizar Ticket";
+            btn.innerHTML = `<i class="fas fa-save"></i> Salvar Alterações`;
         }
 
-        // ================= ROTINAS DE USUÁRIOS =================
+        // Restante das rotinas (Usuarios, Aniversarios) inalteradas
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
@@ -317,12 +330,7 @@
                 const tbody = document.querySelector('#tabela-usuarios tbody');
                 tbody.innerHTML = '';
                 users.forEach(u => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${u.id}</td><td><strong>${u.user}</strong></td><td>${u.perfil}</td><td>${u.equipe}</td>
-                            <td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/usuarios/${u.id}', carregarUsuarios)"><i class="fas fa-trash"></i></button></td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr><td>${u.id}</td><td><strong>${u.user}</strong></td><td>${u.perfil}</td><td>${u.equipe}</td><td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/usuarios/${u.id}', carregarUsuarios)"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
             } catch (err) {}
         }
@@ -335,7 +343,6 @@
         async function salvarUsuario() {
             const payload = { user: document.getElementById('novo-user').value, senha: document.getElementById('novo-senha').value, perfil: document.getElementById('novo-perfil').value, equipe: document.getElementById('novo-equipe').value.toUpperCase() };
             if(!payload.user || !payload.senha) return mostrarToast("Preencha usuário e senha", "warning");
-            
             try {
                 const res = await fetch('/api/usuarios', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 if(res.ok){ mostrarToast("Usuário criado!", "success"); fecharModal('modal-usuario'); carregarUsuarios(); }
@@ -343,7 +350,6 @@
             } catch (err) { mostrarToast("Erro", "error"); }
         }
 
-        // ================= ROTINAS DE ANIVERSÁRIOS =================
         async function carregarAniversarios() {
             try {
                 const res = await fetch('/api/aniversarios');
@@ -351,12 +357,7 @@
                 const tbody = document.querySelector('#tabela-aniversarios tbody');
                 tbody.innerHTML = '';
                 nivers.forEach(n => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${n.nome}</strong></td><td>${n.dia.toString().padStart(2,'0')}</td><td>${n.mes.toString().padStart(2,'0')}</td>
-                            <td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/aniversarios/${n.id}', carregarAniversarios)"><i class="fas fa-trash"></i></button></td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += `<tr><td><strong>${n.nome}</strong></td><td>${n.dia.toString().padStart(2,'0')}</td><td>${n.mes.toString().padStart(2,'0')}</td><td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/aniversarios/${n.id}', carregarAniversarios)"><i class="fas fa-trash"></i></button></td></tr>`;
                 });
             } catch (err) {}
         }
@@ -369,7 +370,6 @@
         async function salvarNiver() {
             const payload = { nome: document.getElementById('niver-nome').value, dia: parseInt(document.getElementById('niver-dia').value), mes: parseInt(document.getElementById('niver-mes').value) };
             if(!payload.nome || !payload.dia || !payload.mes) return mostrarToast("Preencha todos os campos", "warning");
-            
             try {
                 const res = await fetch('/api/aniversarios', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 if(res.ok){ mostrarToast("Aniversário salvo!", "success"); fecharModal('modal-niver'); carregarAniversarios(); }
@@ -377,7 +377,6 @@
             } catch (err) {}
         }
 
-        // ================= FUNÇÃO COMUM DE EXCLUSÃO =================
         async function deletarRegistro(url, callbackRecarregar) {
             if(confirm("Tem certeza que deseja excluir?")) {
                 try {
