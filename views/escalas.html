@@ -18,16 +18,18 @@
 
         .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
 
-        /* PAINEL ADMIN OTIMIZADO (COMPACTO) */
+        /* PAINEL ADMIN OTIMIZADO (COM TEXTOS) */
         .admin-panel { background: #16213e; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); display: none; }
         .panel-heading { font-size: 13px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
         
-        .compact-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
-        .compact-row input, .compact-row select { flex: 1; padding: 12px; background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: bold; outline: none; font-size: 15px;}
+        .compact-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
+        .compact-row input, .compact-row select { flex: 1; padding: 12px; background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: bold; outline: none; font-size: 15px; min-width: 150px;}
         .compact-row input:focus { border-color: #007AFF; }
         
-        .btn-icon { width: 45px; height: 45px; border: none; border-radius: 8px; color: #fff; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.3s; flex-shrink: 0;}
-        .btn-icon:active { transform: scale(0.95); }
+        .action-group { display: flex; gap: 10px; flex: 1; min-width: 200px;}
+        .btn-action { flex: 1; padding: 12px 15px; border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.3s; text-transform: uppercase; white-space: nowrap;}
+        .btn-action:active { transform: scale(0.95); }
+        
         .btn-edit { background: #007AFF; }
         .btn-new { background: #e94560; }
         .btn-add { background: #AF52DE; }
@@ -73,6 +75,16 @@
         .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
         .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #fff;}
 
+        /* REGRAS EXCLUSIVAS PARA CELULAR */
+        @media (max-width: 768px) {
+            .compact-row { flex-direction: column; align-items: stretch; }
+            .compact-row input, .compact-row select { width: 100%; }
+            .action-group { width: 100%; }
+            .action-buttons { grid-template-columns: 1fr; }
+            .btn-delete { grid-column: span 1; }
+            #dia-extra { max-width: 100% !important; }
+        }
+
         /* MÁGICA DA IMPRESSÃO (PÁGINA ÚNICA) */
         @media print {
             @page { size: A4 portrait; margin: 10mm; }
@@ -114,20 +126,24 @@
             
             <div class="compact-row">
                 <input type="month" id="mesAno">
-                <button onclick="carregarParaEdicao()" class="btn-icon btn-edit" title="Editar Escala Existente"><i class="fas fa-pencil-alt"></i></button>
-                <button onclick="gerarTabelaBase()" class="btn-icon btn-new" title="Gerar Nova Escala"><i class="fas fa-magic"></i></button>
+                <div class="action-group">
+                    <button onclick="carregarParaEdicao()" class="btn-action btn-edit"><i class="fas fa-pencil-alt"></i> Editar</button>
+                    <button onclick="gerarTabelaBase()" class="btn-action btn-new"><i class="fas fa-magic"></i> Nova</button>
+                </div>
             </div>
 
             <div class="compact-row">
-                <input type="number" id="dia-extra" placeholder="Dia" min="1" max="31" style="max-width: 70px;">
+                <input type="number" id="dia-extra" placeholder="Dia" min="1" max="31" style="max-width: 80px;">
                 <input type="text" id="nome-extra" placeholder="Evento Extra">
-                <button onclick="adicionarEventoExtra()" class="btn-icon btn-add" title="Inserir Evento"><i class="fas fa-plus"></i></button>
+                <div class="action-group">
+                    <button onclick="adicionarEventoExtra()" class="btn-action btn-add" style="width: 100%;"><i class="fas fa-plus"></i> Inserir</button>
+                </div>
             </div>
             
             <div class="action-buttons">
                 <button onclick="salvarEscalaNoBanco()" class="btn-save"><i class="fas fa-save"></i> Salvar</button>
                 <button onclick="salvarEImprimir()" class="btn-print"><i class="fas fa-print"></i> Salvar & PDF</button>
-                <button onclick="solicitarExclusao()" class="btn-delete" id="btn-excluir-admin"><i class="fas fa-trash-alt"></i> Excluir Mês Completo</button>
+                <button onclick="solicitarExclusao()" class="btn-delete" id="btn-excluir-admin"><i class="fas fa-trash-alt"></i> Excluir Mês</button>
             </div>
         </div>
 
@@ -283,7 +299,7 @@
                     });
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                    document.getElementById('btn-excluir-admin').style.display = 'grid';
+                    document.getElementById('btn-excluir-admin').style.display = 'block';
                     mostrarToast("Escala carregada.", "success");
                 } else mostrarToast("Nenhuma escala salva.", "warning");
             } catch (err) { mostrarToast("Erro no servidor.", "error"); }
@@ -339,7 +355,7 @@
                 const response = await fetch('/api/escalas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesAno, dados: pacote }) });
                 if (response.ok) { 
                     if(!isSilent) mostrarToast("Escala salva e equipe notificada!", "success"); 
-                    document.getElementById('btn-excluir-admin').style.display = 'grid'; 
+                    document.getElementById('btn-excluir-admin').style.display = 'block'; 
                     return true;
                 }
             } catch (err) { mostrarToast("Erro ao salvar.", "error"); return false; }
