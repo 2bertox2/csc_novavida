@@ -256,15 +256,28 @@
         firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
 
-        // 3. Função que pede permissão e pega o Token do celular
+// 3. Função que pede permissão e pega o Token do celular (CORRIGIDA)
         async function solicitarPermissaoNotificacao() {
             try {
+                // Checagem de segurança 1: Vê se o navegador suporta a tecnologia
+                if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                    mostrarToast("Seu navegador ou dispositivo (iOS antigo) não suporta notificações nativas.", "error");
+                    return;
+                }
+
+                // O navegador pede permissão ao usuário
                 const permission = await Notification.requestPermission();
                 
                 if (permission === 'granted') {
+                    mostrarToast("Registrando dispositivo... Aguarde.", "warning");
+
+                    // O PULO DO GATO: Mostramos para o Firebase exatamente onde está o arquivo
+                    const registration = await navigator.serviceWorker.register('/public/firebase-messaging-sw.js');
+                    
                     // ALERTA: Substitua a chave abaixo pela sua chave VAPID gerada no Firebase
                     const token = await messaging.getToken({ 
-                        vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc" 
+                        vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc",
+                        serviceWorkerRegistration: registration // Usa o caminho que forçamos acima
                     });
 
                     if (token) {
@@ -275,17 +288,17 @@
                             body: JSON.stringify({ usuario: usuarioAtual.user, token: token })
                         });
                         
-                        mostrarToast("Notificações ativadas! Você receberá os alertas de escala.", "success");
+                        mostrarToast("Notificações ativadas com sucesso! Você receberá os alertas.", "success");
                         document.getElementById('btn-sino').style.display = 'none';
                     } else {
-                        mostrarToast("Erro ao gerar chave do dispositivo.", "error");
+                        mostrarToast("Erro ao gerar a chave única do dispositivo.", "error");
                     }
                 } else {
-                    mostrarToast("Você não permitiu as notificações no navegador.", "warning");
+                    mostrarToast("Você bloqueou as notificações. Libere nas configurações do site.", "error");
                 }
             } catch (error) {
-                console.error(error);
-                mostrarToast("Este navegador não suporta notificações Push.", "error");
+                console.error("Erro detalhado do Firebase:", error);
+                mostrarToast("Falha técnica ao ativar: " + error.message, "error");
             }
         }
 
