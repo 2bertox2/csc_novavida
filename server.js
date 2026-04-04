@@ -23,7 +23,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
 }
 
 // Configuração do PostgreSQL em Nuvem
-const connectionString = process.env.DATABASE_URL || 'COLE_AQUI_A_URL_DO_SEU_BANCO_POSTGRESQL';
+const connectionString = process.env.DATABASE_URL || 'BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc';
 
 const pool = new Pool({
     connectionString: connectionString,
