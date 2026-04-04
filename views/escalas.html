@@ -2,25 +2,30 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gerador de Escalas - GLPI Live</title>
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #1a1a2e; color: #fff; padding: 20px; }
+        body { background-color: #1a1a2e; color: #fff; padding: 20px; overflow-x: hidden; }
+        
         .header { display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto 20px; }
-        .btn-voltar { color: #a2a2bd; text-decoration: none; border: 1px solid #a2a2bd; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .btn-voltar { color: #a2a2bd; text-decoration: none; border: 1px solid #a2a2bd; padding: 10px 15px; border-radius: 5px; font-weight: bold; display: inline-block; text-align: center;}
         
         .admin-panel { background: #16213e; padding: 20px; border-radius: 10px; max-width: 1100px; margin: 0 auto 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: none; }
         .input-group { background: #1a1a2e; padding: 15px; border-radius: 8px; border: 1px solid #0f3460; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input, select, textarea { padding: 10px; background: #16213e; color: #fff; border: 1px solid #0f3460; border-radius: 5px; font-weight: bold; outline: none; }
-        button { padding: 10px 20px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        input, select, textarea { padding: 12px; background: #16213e; color: #fff; border: 1px solid #0f3460; border-radius: 5px; font-weight: bold; outline: none; font-size: 16px;}
+        button { padding: 12px 20px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; font-size: 14px;}
         button:hover { background: #d13d56; }
         
         .table-container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; color: #000; }
-        table { width: 100%; border-collapse: collapse; font-weight: bold; text-transform: uppercase; margin-top: 15px; }
-        th, td { border: 2px solid #000; padding: 10px; text-align: center; vertical-align: middle; }
+        
+        /* O SEGREDO DO MOBILE: Rolagem Horizontal na Tabela */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 5px;}
+        table { width: 100%; border-collapse: collapse; font-weight: bold; text-transform: uppercase; margin-top: 15px; min-width: 650px; }
+        
+        th, td { border: 2px solid #000; padding: 10px; text-align: center; vertical-align: middle; font-size: 14px;}
         th { background: #eee; }
         
         .bg-A { background-color: #FF3B30 !important; color: white; } 
@@ -32,36 +37,45 @@
         .bg-G { background-color: #5AC8FA !important; color: black; } 
         .bg-MISTA { background-color: #FF9500 !important; color: white; }
         .mista-checkboxes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 12px; }
-        .mista-checkboxes label { background: #f0f0f0; padding: 4px 8px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
+        .mista-checkboxes label { background: #f0f0f0; padding: 8px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
         
-        /* BOTÕES LADO A LADO PARA O ADMIN */
-        .btn-row { display: flex; gap: 15px; margin-top: 15px; }
-        .btn-salvar-db { background: #28a745; flex: 1; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .btn-print-admin { background: #6f42c1; flex: 1; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-row { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
+        .btn-salvar-db { background: #28a745; flex: 1; min-width: 250px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-print-admin { background: #6f42c1; flex: 1; min-width: 250px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
         .btn-excluir { background: #dc3545; width: 100%; font-size: 16px; margin-top: 15px; display: none; }
-        
         .btn-exportar { background: #17a2b8; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
-        textarea { width: 100%; margin-top: 10px; background: #f9f9f9; color: #333; border: 1px solid #ccc; }
+        textarea { width: 100%; margin-top: 10px; background: #f9f9f9; color: #333; border: 1px solid #ccc; font-size: 16px;}
 
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px;}
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+        #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all; width: 100%;}
+        
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px;}
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; }
+        .modal-btns { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;}
+        .modal-btns button { flex: 1; min-width: 120px; }
 
-        /* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .modal-btns { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        /* REGRAS EXCLUSIVAS PARA CELULAR (MOBILE-FIRST) */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header { flex-direction: column; gap: 15px; text-align: center; }
+            .btn-voltar { width: 100%; }
+            .input-group { flex-direction: column; align-items: stretch; text-align: left; }
+            .input-group input, .input-group select, .input-group button { width: 100%; }
+            .btn-row { flex-direction: column; }
+            .btn-salvar-db, .btn-print-admin { width: 100%; }
+            .table-container { padding: 15px; }
+            h2#titulo-mes { font-size: 18px; text-align: center; }
+            th, td { font-size: 12px; padding: 8px; }
+        }
 
-        /* =========================================================
-           A MÁGICA DA IMPRESSÃO (TUDO EM UMA PÁGINA)
-           ========================================================= */
+        /* MÁGICA DA IMPRESSÃO (NÃO TOCA NISSO) */
         @media print {
             @page { size: A4 portrait; margin: 10mm; }
-            body { background: white; padding: 0; zoom: 0.90; } /* Zoom reduz o tamanho global para caber */
+            body { background: white; padding: 0; zoom: 0.90; overflow: visible;} 
             .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura, .btn-excluir, #toast-container { display: none !important; }
             .table-container { box-shadow: none; padding: 0; margin: 0; page-break-inside: avoid; }
-            table { width: 100%; font-size: 10px !important; margin-top: 5px; }
+            .table-responsive { overflow-x: visible; }
+            table { width: 100%; font-size: 10px !important; margin-top: 5px; min-width: auto;}
             th, td { padding: 4px !important; border: 1px solid #000; }
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 10px; font-weight: bold;}
             textarea { border: none; outline: none; resize: none; overflow: hidden; font-size: 11px; margin-top: 5px; padding: 0;}
@@ -78,28 +92,28 @@
             <h3 style="color:#333; margin-bottom:10px;">Atenção</h3>
             <p id="confirm-msg" style="color:#666;">Deseja realmente continuar?</p>
             <div class="modal-btns">
-                <button onclick="document.getElementById('custom-confirm').style.display='none'" style="background: #6c757d; flex: 1;">Cancelar</button>
-                <button id="btn-confirm-yes" style="background: #dc3545; flex: 1;">Sim, Excluir</button>
+                <button onclick="document.getElementById('custom-confirm').style.display='none'" style="background: #6c757d;">Cancelar</button>
+                <button id="btn-confirm-yes" style="background: #dc3545;">Sim, Excluir</button>
             </div>
         </div>
     </div>
 
     <div class="header">
         <a href="/dashboard" class="btn-voltar"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
-        <h1 style="color: #e94560;">ESCALAS</h1>
+        <h1 style="color: #e94560; font-size: 24px;">ESCALAS</h1>
     </div>
 
     <div class="admin-panel" id="painel-admin">
         <div class="input-group">
-            <label>1. Selecione o Mês:</label>
+            <label style="width: 100%;">1. Selecione o Mês:</label>
             <input type="month" id="mesAno">
-            <button onclick="carregarParaEdicao()" style="background: #007AFF;"><i class="fas fa-pencil-alt"></i> Editar Escala</button>
-            <button onclick="gerarTabelaBase()"><i class="fas fa-table"></i> Construir Nova</button>
+            <button onclick="carregarParaEdicao()" style="background: #007AFF;"><i class="fas fa-pencil-alt"></i> Editar</button>
+            <button onclick="gerarTabelaBase()"><i class="fas fa-table"></i> Nova</button>
         </div>
         <div class="input-group">
-            <label>2. Adicionar Evento Extra:</label>
-            <input type="number" id="dia-extra" placeholder="Dia" style="width: 70px;" min="1" max="31">
-            <input type="text" id="nome-extra" placeholder="Nome do Evento" style="width: 200px;">
+            <label style="width: 100%;">2. Evento Extra:</label>
+            <input type="number" id="dia-extra" placeholder="Dia" min="1" max="31">
+            <input type="text" id="nome-extra" placeholder="Nome do Evento">
             <button onclick="adicionarEventoExtra()" style="background: #AF52DE;"><i class="fas fa-plus"></i> Inserir</button>
         </div>
         
@@ -113,23 +127,26 @@
 
     <div class="table-container" id="escala-print">
         <div class="input-group" id="painel-leitura" style="background: #f4f4f4; border: 1px solid #ddd; display: none;">
-            <label style="color: #000;">Visualizar Mês:</label>
+            <label style="color: #000; width: 100%;">Visualizar Mês:</label>
             <input type="month" id="mesAnoLeitura" style="background: #fff; color: #000; border: 1px solid #ccc;">
-            <button onclick="buscarEscalaSalva()" style="background: #007AFF;"><i class="fas fa-search"></i> Buscar Escala</button>
+            <button onclick="buscarEscalaSalva()" style="background: #007AFF;"><i class="fas fa-search"></i> Buscar</button>
         </div>
 
         <h2 id="titulo-mes" style="border-bottom: 2px solid #000; padding-bottom: 10px;">SELECIONE UM MÊS</h2>
-        <table id="tabela-escala">
-            <thead>
-                <tr>
-                    <th>DIA DA SEMANA / EVENTO</th>
-                    <th>DIA</th>
-                    <th>RESPONSÁVEL / EQUIPE</th>
-                    <th>MEMBROS ESCALADOS</th>
-                </tr>
-            </thead>
-            <tbody id="corpo-tabela"></tbody>
-        </table>
+        
+        <div class="table-responsive">
+            <table id="tabela-escala">
+                <thead>
+                    <tr>
+                        <th>DIA DA SEMANA / EVENTO</th>
+                        <th>DIA</th>
+                        <th>RESPONSÁVEL / EQUIPE</th>
+                        <th>MEMBROS ESCALADOS</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela"></tbody>
+            </table>
+        </div>
         
         <div id="feriados-lista" style="margin-top: 15px; font-weight: bold; color: #dc3545; font-size: 14px;"></div>
         <div id="aniversarios-lista" style="margin-top: 5px; font-weight: bold; color: #007AFF; font-size: 14px;"></div>
@@ -139,11 +156,10 @@
     </div>
 
     <script>
-        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI", "JOSÉ", "VICTOR"] };
+        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI"] };
         const feriados2026 = { "0-1": "Confraternização Universal", "1-17": "Carnaval", "3-3": "Sexta-feira Santa", "3-5": "Páscoa", "3-21": "Tiradentes", "4-1": "Dia do Trabalho", "5-4": "Corpus Christi", "8-7": "Independência", "9-12": "Nossa Sra Aparecida", "10-2": "Finados", "10-15": "Proclamação da República", "11-25": "Natal" };
 
         let usuarioAtual = null;
-        let exclusaoCallback = null;
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -167,7 +183,7 @@
                 document.getElementById('painel-leitura').style.display = 'flex';
                 document.getElementById('mesAnoLeitura').value = getMesAtual();
                 document.getElementById('obs-geral').setAttribute('readonly', 'true');
-                buscarEscalaSalva(getMesAtual());
+                buscarEscalaSalva();
             }
         };
 
@@ -180,7 +196,6 @@
             listaF.innerHTML = ''; listaA.innerHTML = '';
             const diasMes = new Date(2026, mesNumero, 0).getDate();
             for(let d=1; d<=diasMes; d++) if(feriados2026[`${mesNumero-1}-${d}`]) listaF.innerHTML += `🔴 FERIADO NACIONAL: ${d.toString().padStart(2, '0')}/${mesNumero.toString().padStart(2, '0')} - ${feriados2026[`${mesNumero-1}-${d}`]}<br>`;
-            
             try {
                 const res = await fetch('/api/aniversarios');
                 const todos = await res.json();
@@ -192,10 +207,8 @@
             const val = document.getElementById('mesAno').value;
             if(!val) return mostrarToast("Selecione o mês.", "warning");
             const [ano, mes] = val.split('-').map(Number);
-            
             document.getElementById('titulo-mes').innerText = `${new Date(ano, mes-1).toLocaleString('pt-br', {month: 'long'}).toUpperCase()} / ${ano}`;
             const tbody = document.getElementById('corpo-tabela'); tbody.innerHTML = ''; document.getElementById('obs-geral').value = '';
-            
             const diasMes = new Date(ano, mes, 0).getDate();
             for(let d=1; d<=diasMes; d++) {
                 const ds = new Date(ano, mes-1, d).getDay();
@@ -256,7 +269,7 @@
                         tbody.appendChild(tr);
                         if (linha.equipe === 'MISTA') {
                             tr.querySelector('.select-equipe').style.display = 'none';
-                            tr.cells[2].innerHTML += ` <strong>MISTA</strong><br><button onclick="destravarMista(this)" style="font-size:10px; padding:2px 5px; margin-top:5px; background:#333; color:#fff; border:none;">Editar</button>`;
+                            tr.cells[2].innerHTML += ` <strong>MISTA</strong><br><button onclick="destravarMista(this)" style="font-size:10px; padding:6px; margin-top:5px; background:#333; color:#fff; border:none; width:100%; border-radius:4px;">Editar</button>`;
                         }
                     });
                     await preencherDatasEspeciais(mes);
@@ -323,12 +336,11 @@
             } catch (err) { mostrarToast("Erro ao salvar.", "error"); return false; }
         }
 
-        // --- FUNÇÃO HÍBRIDA (SALVAR E IMPRIMIR) ---
         async function salvarEImprimir() {
-            const sucesso = await salvarEscalaNoBanco(true); // Salva silenciosamente
+            const sucesso = await salvarEscalaNoBanco(true);
             if (sucesso) {
                 mostrarToast("Tudo salvo! Abrindo impressão...", "success");
-                setTimeout(() => { window.print(); }, 800); // Espera 0.8s pra UI atualizar e abre o PDF
+                setTimeout(() => { window.print(); }, 800);
             }
         }
 
@@ -351,7 +363,7 @@
         }
 
         async function buscarEscalaSalva() {
-            const mesAno = document.getElementById('mesAnoLeitura').value;
+            const mesAno = document.getElementById('mesAnoLeitura').value || getMesAtual();
             if(!mesAno) return;
             const [ano, mes] = mesAno.split('-').map(Number);
             try {
@@ -370,7 +382,7 @@
                     });
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                } else mostrarToast("Nenhuma escala encontrada.", "warning");
+                } else mostrarToast("Nenhuma escala encontrada para este mês.", "warning");
             } catch (err) {}
         }
     </script>
