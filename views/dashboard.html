@@ -2,26 +2,36 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <title>Dashboard - GLPI Live</title>
+    
     <link rel="manifest" href="/public/manifest.json">
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
     <link rel="apple-touch-icon" href="/public/img/REDONDOSIMBOLO 01.png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        
         .navbar { background-color: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
         .navbar-brand { display: flex; align-items: center; gap: 15px; }
         .navbar-brand img { height: 40px; }
-        .user-menu { display: flex; align-items: center; gap: 15px; }
-        .btn-notificacao { background: #007AFF; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .user-menu { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: flex-end;}
+        
+        .btn-notificacao { background: #007AFF; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; justify-content: center;}
         .btn-notificacao:hover { filter: brightness(1.1); }
+        .btn-atualizar { background: #28a745; }
+        
         .main-content { padding: 30px 20px; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
         
-        /* CARDS DE INDICADORES (NOVIDADE) */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
         .stat-card { background: #16213e; padding: 20px; border-radius: 10px; border-left: 5px solid #e94560; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .stat-card h3 { font-size: 12px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 10px; }
@@ -33,29 +43,42 @@
         .card-icon { font-size: 40px; color: #e94560; margin-bottom: 15px; }
         .card-title { font-size: 18px; font-weight: bold; }
 
-        /* TOAST E MEGAFONE */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-size: 14px; font-weight: bold;}
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; font-size: 14px; font-weight: bold; pointer-events: all; width: 100%;}
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; position: relative; }
-        .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px;}
+        .modal-content { background-color: #fff; padding: 30px 20px; border-radius: 10px; width: 100%; max-width: 500px; position: relative; }
+        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; }
-        .btn-enviar-push { width: 100%; padding: 12px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; font-size: 16px;}
+        .btn-enviar-push { width: 100%; padding: 14px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+        /* MÁGICA DA RESPONSIVIDADE MOBILE */
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 15px; padding: 15px; text-align: center; }
+            .user-menu { flex-direction: column; width: 100%; gap: 10px; }
+            .btn-notificacao { width: 100%; font-size: 16px; padding: 12px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .stat-card { text-align: center; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div id="toast-container"></div>
 
     <header class="navbar">
-        <div class="navbar-brand"><img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> <span style="font-weight: bold; color: #e94560;">CSC Live</span></div>
+        <div class="navbar-brand">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> 
+            <span style="font-weight: bold; color: #e94560;">CSC Live</span>
+        </div>
         <div class="user-menu">
+            <button onclick="forcarAtualizacao()" class="btn-notificacao btn-atualizar"><i class="fas fa-sync-alt"></i> Atualizar App</button>
             <button onclick="solicitarPermissaoNotificacao()" class="btn-notificacao" id="btn-sino"><i class="fas fa-bell"></i> Ativar Alertas</button>
-            <a href="/" class="btn-notificacao" style="background: transparent; border: 1px solid #e94560; text-decoration: none;">Sair</a>
+            <a href="/" class="btn-notificacao" style="background: transparent; border: 1px solid #e94560; text-decoration: none; color: #e94560;">Sair da Conta</a>
         </div>
     </header>
 
@@ -63,7 +86,7 @@
         <div class="stats-grid">
             <div class="stat-card"><h3>Chamados Pendentes</h3><div class="value" id="stat-pendentes">--</div></div>
             <div class="stat-card"><h3>Membros Ativos</h3><div class="value" id="stat-membros">--</div></div>
-            <div class="stat-card" style="grid-column: span 2; border-left-color: #007AFF;"><h3>Próximo Culto Escala</h3><div class="value" id="stat-proximo" style="font-size: 16px;">Carregando...</div></div>
+            <div class="stat-card" style="grid-column: span 1; border-left-color: #007AFF;"><h3>Próximo Culto Escala</h3><div class="value" id="stat-proximo" style="font-size: 16px;">Carregando...</div></div>
         </div>
 
         <div class="dashboard-grid" id="grid-modulos">
@@ -75,7 +98,7 @@
     <div id="modal-megafone" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('modal-megafone').style.display = 'none'">&times;</span>
-            <h2 style="color: #f39c12; margin-bottom: 20px;"><i class="fas fa-bullhorn"></i> Enviar Aviso Geral</h2>
+            <h2 style="color: #f39c12; margin-bottom: 20px; font-size: 20px;"><i class="fas fa-bullhorn"></i> Enviar Aviso Geral</h2>
             <div class="form-group"><label>Título:</label><input type="text" id="push-titulo" placeholder="Ex: Reunião Urgente"></div>
             <div class="form-group"><label>Mensagem:</label><textarea id="push-msg" rows="4" placeholder="Recado..."></textarea></div>
             <button class="btn-enviar-push" onclick="dispararAvisoManual()">Disparar Notificação</button>
@@ -96,6 +119,11 @@
             setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
+        function forcarAtualizacao() {
+            mostrarToast("Limpando cache e buscando nova versão...", "warning");
+            setTimeout(() => { window.location.href = window.location.pathname + '?refresh=' + new Date().getTime(); }, 1500);
+        }
+
         window.onload = async () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) return window.location.href = '/';
@@ -103,7 +131,6 @@
 
             if (Notification.permission === 'granted') document.getElementById('btn-sino').style.display = 'none';
 
-            // Carrega Indicadores
             try {
                 const res = await fetch('/api/stats');
                 const stats = await res.json();
@@ -127,19 +154,21 @@
 
         async function solicitarPermissaoNotificacao() {
             try {
+                if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+                    mostrarToast("Seu navegador não suporta notificações nativas.", "error"); return;
+                }
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    mostrarToast("Registrando... Aguarde.", "warning");
+                    mostrarToast("Registrando dispositivo...", "warning");
                     const registration = await navigator.serviceWorker.register('/public/firebase-messaging-sw.js');
                     const token = await messaging.getToken({ vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc", serviceWorkerRegistration: registration });
-                    
                     if (token) {
                         await fetch('/api/push-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user, token: token }) });
-                        mostrarToast("Notificações ativadas!", "success");
+                        mostrarToast("Notificações ativadas com sucesso!", "success");
                         document.getElementById('btn-sino').style.display = 'none';
                     }
                 }
-            } catch (error) { mostrarToast("Erro ao ativar.", "error"); }
+            } catch (error) { mostrarToast("Falha técnica: " + error.message, "error"); }
         }
 
         messaging.onMessage((payload) => { mostrarToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`, 'success'); });
