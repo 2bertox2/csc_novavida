@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <title>Dashboard - GLPI Live</title>
+    <title>Dashboard - CSC Live</title>
     
     <link rel="manifest" href="/public/manifest.json">
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
@@ -17,90 +17,148 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #121220; color: #fff; min-height: 100vh; overflow-x: hidden; }
         
-        .navbar { background-color: #16213e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
-        .navbar-brand { display: flex; align-items: center; gap: 15px; }
-        .navbar-brand img { height: 40px; }
-        .user-menu { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: flex-end;}
+        /* CABEÇALHO ESTILO APP NATIVO */
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand img { height: 35px; }
+        .brand span { font-size: 18px; font-weight: 800; color: #e94560; letter-spacing: 0.5px; }
         
-        .btn-notificacao { background: #007AFF; color: #fff; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; justify-content: center;}
-        .btn-notificacao:hover { filter: brightness(1.1); }
-        .btn-atualizar { background: #28a745; }
-        
-        .main-content { padding: 30px 20px; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .stat-card { background: #16213e; padding: 20px; border-radius: 10px; border-left: 5px solid #e94560; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .stat-card h3 { font-size: 12px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 10px; }
-        .stat-card .value { font-size: 24px; font-weight: bold; color: #fff; }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .icon-btn:active { transform: scale(0.9); }
+        .icon-btn.refresh { color: #28a745; }
+        .icon-btn.bell { color: #f39c12; }
+        .icon-btn.logout { color: #dc3545; }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-        .card { background-color: #16213e; border-radius: 10px; padding: 30px 20px; text-align: center; text-decoration: none; color: #fff; border: 2px solid transparent; transition: 0.3s; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;}
-        .card:hover { border-color: #e94560; transform: translateY(-5px); }
-        .card-icon { font-size: 40px; color: #e94560; margin-bottom: 15px; }
-        .card-title { font-size: 18px; font-weight: bold; }
+        .main-content { padding: 25px 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
-        #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; font-size: 14px; font-weight: bold; pointer-events: all; width: 100%;}
+        /* MENSAGEM DE BOAS VINDAS E USUÁRIO */
+        .user-welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+        .user-welcome h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+        .user-welcome p { font-size: 13px; color: #a2a2bd; }
+        .badge-perfil { background: rgba(233, 69, 96, 0.2); color: #e94560; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 1px; border: 1px solid rgba(233, 69, 96, 0.4); }
+
+        /* GRID DE INDICADORES (LADO A LADO NO MOBILE) */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: #16213e; padding: 20px; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02);}
+        .stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #007AFF; border-radius: 4px 0 0 4px; }
+        .stat-card.red::before { background: #e94560; }
+        .stat-card.yellow::before { background: #f39c12; }
+        .stat-card.full-width { grid-column: span 2; }
+        
+        .stat-icon { position: absolute; right: 15px; top: 20px; font-size: 24px; color: rgba(255,255,255,0.05); }
+        .stat-card h3 { font-size: 12px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px;}
+        .stat-card .value { font-size: 26px; font-weight: 800; color: #fff; }
+        .stat-card.full-width .value { font-size: 18px; }
+
+        /* MÓDULOS DE NAVEGAÇÃO */
+        .section-title { font-size: 14px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        
+        .module-card { background-color: #16213e; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 20px; text-decoration: none; color: #fff; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .module-card:hover, .module-card:active { background-color: #1a264a; transform: translateY(-3px); border-color: #e94560;}
+        .m-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 22px; }
+        .m-icon.blue { background: rgba(0, 122, 255, 0.15); color: #007AFF; }
+        .m-icon.red { background: rgba(233, 69, 96, 0.15); color: #e94560; }
+        .m-icon.yellow { background: rgba(243, 156, 18, 0.15); color: #f39c12; }
+        .m-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .m-info p { font-size: 13px; color: #a2a2bd; }
+
+        /* SISTEMA DE TOAST E MODAL */
+        #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; font-size: 14px; font-weight: bold; pointer-events: all; width: 100%;}
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px;}
-        .modal-content { background-color: #fff; padding: 30px 20px; border-radius: 10px; width: 100%; max-width: 500px; position: relative; }
-        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; font-size: 16px;}
-        .btn-enviar-push { width: 100%; padding: 14px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; }
-
-        /* MÁGICA DA RESPONSIVIDADE MOBILE */
-        @media (max-width: 768px) {
-            .navbar { flex-direction: column; gap: 15px; padding: 15px; text-align: center; }
-            .user-menu { flex-direction: column; width: 100%; gap: 10px; }
-            .btn-notificacao { width: 100%; font-size: 16px; padding: 12px; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .stat-card { text-align: center; }
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px);}
+        .modal-content { background-color: #16213e; padding: 30px 20px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; color: #a2a2bd; cursor: pointer; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #a2a2bd; }
+        .form-group textarea, .form-group input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); outline: none; font-size: 15px; background: #1a1a2e; color: #fff;}
+        .form-group input:focus, .form-group textarea:focus { border-color: #f39c12; }
+        .btn-enviar-push { width: 100%; padding: 16px; background: #f39c12; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;}
     </style>
 </head>
 <body>
     <div id="toast-container"></div>
 
-    <header class="navbar">
-        <div class="navbar-brand">
+    <header class="app-header">
+        <div class="brand">
             <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> 
-            <span style="font-weight: bold; color: #e94560;">CSC Live</span>
+            <span>CSC Live</span>
         </div>
-        <div class="user-menu">
-            <button onclick="forcarAtualizacao()" class="btn-notificacao btn-atualizar"><i class="fas fa-sync-alt"></i> Atualizar App</button>
-            <button onclick="solicitarPermissaoNotificacao()" class="btn-notificacao" id="btn-sino"><i class="fas fa-bell"></i> Ativar Alertas</button>
-            <a href="/" class="btn-notificacao" style="background: transparent; border: 1px solid #e94560; text-decoration: none; color: #e94560;">Sair da Conta</a>
+        <div class="header-actions">
+            <button onclick="solicitarPermissaoNotificacao()" id="btn-sino" class="icon-btn bell" title="Ativar Notificações"><i class="fas fa-bell"></i></button>
+            <button onclick="forcarAtualizacao()" class="icon-btn refresh" title="Atualizar App"><i class="fas fa-sync-alt"></i></button>
+            <button onclick="fazerLogout()" class="icon-btn logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="stats-grid">
-            <div class="stat-card"><h3>Chamados Pendentes</h3><div class="value" id="stat-pendentes">--</div></div>
-            <div class="stat-card"><h3>Membros Ativos</h3><div class="value" id="stat-membros">--</div></div>
-            <div class="stat-card" style="grid-column: span 1; border-left-color: #007AFF;"><h3>Próximo Culto Escala</h3><div class="value" id="stat-proximo" style="font-size: 16px;">Carregando...</div></div>
+        <div class="user-welcome">
+            <div>
+                <h2 id="nome-usuario-tela">Olá, ---</h2>
+                <p>Bem-vindo à central operacional</p>
+            </div>
+            <div class="badge-perfil" id="perfil-badge">--</div>
         </div>
 
-        <div class="dashboard-grid" id="grid-modulos">
-            <a href="/escalas" class="card"><div class="card-icon"><i class="fas fa-calendar-alt"></i></div><div class="card-title">Gestão de Escalas</div></a>
-            <a href="/chamados" class="card"><div class="card-icon"><i class="fas fa-headset"></i></div><div class="card-title">Help Desk & Assistência</div></a>
+        <h3 class="section-title">Visão Geral</h3>
+        <div class="stats-grid">
+            <div class="stat-card red">
+                <i class="fas fa-ticket-alt stat-icon"></i>
+                <h3>Pendentes</h3>
+                <div class="value" id="stat-pendentes">--</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <h3>Membros</h3>
+                <div class="value" id="stat-membros">--</div>
+            </div>
+            <div class="stat-card full-width yellow">
+                <i class="fas fa-calendar-check stat-icon"></i>
+                <h3>Próximo Culto Escala</h3>
+                <div class="value" id="stat-proximo">Carregando...</div>
+            </div>
         </div>
+
+        <h3 class="section-title">Módulos do Sistema</h3>
+        <div class="modules-grid" id="grid-modulos">
+            <a href="/escalas" class="module-card">
+                <div class="m-icon blue"><i class="fas fa-calendar-alt"></i></div>
+                <div class="m-info">
+                    <h4>Gestão de Escalas</h4>
+                    <p>Criar, editar e gerar PDF</p>
+                </div>
+            </a>
+            <a href="/chamados" class="module-card">
+                <div class="m-icon red"><i class="fas fa-headset"></i></div>
+                <div class="m-info">
+                    <h4>Help Desk</h4>
+                    <p>Tickets e assistência</p>
+                </div>
+            </a>
+            </div>
     </main>
 
     <div id="modal-megafone" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('modal-megafone').style.display = 'none'">&times;</span>
-            <h2 style="color: #f39c12; margin-bottom: 20px; font-size: 20px;"><i class="fas fa-bullhorn"></i> Enviar Aviso Geral</h2>
-            <div class="form-group"><label>Título:</label><input type="text" id="push-titulo" placeholder="Ex: Reunião Urgente"></div>
-            <div class="form-group"><label>Mensagem:</label><textarea id="push-msg" rows="4" placeholder="Recado..."></textarea></div>
+            <h2 style="color: #f39c12; margin-bottom: 20px; font-size: 20px;"><i class="fas fa-bullhorn"></i> Enviar Aviso</h2>
+            <div class="form-group">
+                <label>Título do Push:</label>
+                <input type="text" id="push-titulo" placeholder="Ex: Reunião Urgente">
+            </div>
+            <div class="form-group">
+                <label>Mensagem:</label>
+                <textarea id="push-msg" rows="4" placeholder="Digite o recado aqui..."></textarea>
+            </div>
             <button class="btn-enviar-push" onclick="dispararAvisoManual()">Disparar Notificação</button>
         </div>
     </div>
@@ -108,12 +166,17 @@
     <script>
         let usuarioAtual = null;
 
+        function fazerLogout() {
+            localStorage.removeItem('usuarioLogado');
+            window.location.href = '/';
+        }
+
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast`;
             if(tipo === 'error') toast.style.borderLeftColor = '#dc3545';
-            if(tipo === 'warning') toast.style.borderLeftColor = '#ffc107';
+            if(tipo === 'warning') toast.style.borderLeftColor = '#f39c12';
             toast.innerHTML = `<div>${mensagem}</div>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
@@ -129,8 +192,15 @@
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
 
+            // Restaura a exibição do nome do usuário logado
+            let nomeFormatado = usuarioAtual.user.split('.')[0]; // Pega o primeiro nome
+            nomeFormatado = nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1);
+            document.getElementById('nome-usuario-tela').innerText = `Olá, ${nomeFormatado}`;
+            document.getElementById('perfil-badge').innerText = usuarioAtual.perfil;
+
             if (Notification.permission === 'granted') document.getElementById('btn-sino').style.display = 'none';
 
+            // Carrega Estatísticas
             try {
                 const res = await fetch('/api/stats');
                 const stats = await res.json();
@@ -139,11 +209,19 @@
                 document.getElementById('stat-proximo').innerText = stats.proximoEvento;
             } catch (e) { console.log("Erro ao carregar estatísticas."); }
 
+            // Injeta o Megafone com o novo visual se for ADMIN
             if (usuarioAtual.perfil === 'ADMIN') {
                 const megafone = document.createElement('a');
-                megafone.href = "#"; megafone.className = "card"; megafone.style.backgroundColor = "#f39c12"; megafone.style.borderColor = "#f39c12";
-                megafone.onclick = () => document.getElementById('modal-megafone').style.display = 'flex';
-                megafone.innerHTML = `<div class="card-icon" style="color:#fff"><i class="fas fa-bullhorn"></i></div><div class="card-title">Disparar Aviso</div>`;
+                megafone.href = "#"; 
+                megafone.className = "module-card";
+                megafone.onclick = (e) => { e.preventDefault(); document.getElementById('modal-megafone').style.display = 'flex'; };
+                megafone.innerHTML = `
+                    <div class="m-icon yellow"><i class="fas fa-bullhorn"></i></div>
+                    <div class="m-info">
+                        <h4>Aviso Geral</h4>
+                        <p>Disparar Push para equipe</p>
+                    </div>
+                `;
                 document.getElementById('grid-modulos').appendChild(megafone);
             }
         };
@@ -176,12 +254,14 @@
         async function dispararAvisoManual() {
             const titulo = document.getElementById('push-titulo').value;
             const mensagem = document.getElementById('push-msg').value;
-            if(!titulo || !mensagem) return;
+            if(!titulo || !mensagem) return mostrarToast("Preencha todos os campos.", "warning");
             document.querySelector('.btn-enviar-push').innerText = "Enviando...";
             await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, mensagem }) });
-            mostrarToast("Aviso enviado!", "success");
+            mostrarToast("Aviso enviado com sucesso!", "success");
             document.getElementById('modal-megafone').style.display = 'none';
             document.querySelector('.btn-enviar-push').innerText = "Disparar Notificação";
+            document.getElementById('push-titulo').value = '';
+            document.getElementById('push-msg').value = '';
         }
     </script>
 </body>
