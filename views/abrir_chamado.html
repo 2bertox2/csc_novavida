@@ -2,211 +2,318 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abertura de Chamado - GLPI Live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nova Solicitação - CSC Live</title>
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
-    <link rel="apple-touch-icon" href="/public/img/REDONDOSIMBOLO 01.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f4f7f6; display: flex; height: 100vh; overflow: hidden; }
-
-        .sidebar { width: 240px; background-color: #1a1a2e; color: white; display: flex; flex-direction: column; transition: 0.3s; }
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c44; }
-        .sidebar-header img { width: 120px; }
-        .nav-menu { flex: 1; padding: 10px 0; }
-        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #a2a2bd; text-decoration: none; transition: 0.2s; }
-        .nav-item:hover, .nav-item.active { background-color: #e94560; color: white; }
-        .nav-item i { width: 20px; text-align: center; }
-
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
-        .header-title { margin-bottom: 30px; }
-        .header-title h2 { color: #333; font-size: 22px; }
-
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        .category-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: #333; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .category-card:hover { border-color: #e94560; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
-        .category-card i { font-size: 24px; color: #e94560; width: 40px; text-align: center; }
-        .category-card span { font-weight: 600; font-size: 14px; }
-
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: scaleUp 0.2s ease forwards;}
-        .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
-        .close-btn:hover { color: #000; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #f4f7f6; color: #333; padding-bottom: 30px; overflow-x: hidden; }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; transition: 0.3s; font-family: 'Segoe UI', sans-serif; }
-        .form-group textarea:focus { border-color: #e94560; }
-        
-        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ddd; }
-        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
-        .checkbox-group label { margin: 0; cursor: pointer; font-size: 13px; color: #555; line-height: 1.4; }
+        /* CABEÇALHO PADRÃO APP (Versão Externa) */
+        .app-header { display: flex; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; gap: 15px; }
+        .btn-voltar { color: #a2a2bd; text-decoration: none; font-size: 20px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: 0.3s;}
+        .btn-voltar:active { transform: scale(0.9); }
+        .page-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 10px;}
+        .page-title img { height: 28px; }
 
-        .btn-submit { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        .btn-submit:hover { background: #d13d56; }
+        .main-container { max-width: 1000px; margin: 30px auto 0; padding: 0 20px; text-align: center;}
         
-        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .header-titles { margin-bottom: 30px; }
+        .header-titles h2 { font-size: 22px; color: #16213e; margin-bottom: 8px; font-weight: 800;}
+        .header-titles p { color: #666; font-size: 15px; }
 
-        /* SISTEMA DE NOTIFICAÇÕES (TOAST) */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
-        .toast i { font-size: 20px; }
-        .toast.success { border-left-color: #28a745; }
-        .toast.success i { color: #28a745; }
-        .toast.warning { border-left-color: #ffc107; }
-        .toast.warning i { color: #ffc107; }
-        .toast.error { border-left-color: #dc3545; }
-        .toast.error i { color: #dc3545; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+        /* GRID DE CATEGORIAS RESPONSIVO */
+        .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 40px;}
+        
+        .cat-card { background: #fff; padding: 20px 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; border: 2px solid transparent; transition: 0.3s; display: flex; align-items: center; gap: 15px; text-align: left;}
+        .cat-card:hover, .cat-card:active { border-color: #e94560; transform: translateY(-3px); box-shadow: 0 8px 15px rgba(233,69,96,0.15);}
+        
+        .cat-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 20px; flex-shrink: 0;}
+        .cat-title { font-weight: 700; color: #333; font-size: 15px; }
+        
+        /* Cores dos Ícones */
+        .ic-arte { background: rgba(233, 69, 96, 0.1); color: #e94560; }
+        .ic-video { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+        .ic-live { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+        .ic-audio { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+        .ic-rede { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+        .ic-soft { background: rgba(241, 196, 15, 0.1); color: #f39c12; }
+        .ic-hard { background: rgba(52, 73, 94, 0.1); color: #34495e; }
+        .ic-energia { background: rgba(230, 126, 34, 0.1); color: #e67e22; }
+        .ic-outros { background: rgba(149, 165, 166, 0.1); color: #7f8c8d; }
+
+        /* FORMULÁRIO MODAL */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); justify-content: center; align-items: flex-end; padding: 0;}
+        .modal-content { background-color: #fff; padding: 30px 25px; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; position: relative; animation: slideUp 0.3s ease forwards;}
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .close-btn { position: absolute; right: 25px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .modal-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px;}
+        .modal-header h3 { font-size: 18px; color: #333; }
+        
+        .form-group { margin-bottom: 15px; text-align: left;}
+        .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #666; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; background: #f9f9f9; color: #333; outline: none; font-size: 15px; transition: 0.3s;}
+        .form-group input:focus, .form-group textarea:focus { border-color: #e94560; background: #fff;}
+        
+        .btn-enviar { width: 100%; padding: 16px; background: #e94560; color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;}
+        .btn-enviar:active { transform: scale(0.98); }
+
+        /* TOAST */
+        #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #16213e; color: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #28a745; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* BOTÃO QR CODE ADMIN */
+        .admin-qr-section { margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ccc; display: none; flex-direction: column; align-items: center; gap: 15px;}
+        .btn-qr { background: #007AFF; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px;}
+        canvas { display: none; } /* Esconde o canvas, usamos só pra gerar a imagem */
+
+        @media (max-width: 600px) {
+            .categories-grid { grid-template-columns: 1fr 1fr; }
+            .cat-card { padding: 15px 10px; flex-direction: column; text-align: center; gap: 10px;}
+            .header-titles h2 { font-size: 18px; }
+        }
     </style>
 </head>
 <body>
-
     <div id="toast-container"></div>
 
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
+    <header class="app-header">
+        <a href="javascript:history.back()" class="btn-voltar" id="btn-back"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> 
+            Central de Suporte
+        </h1>
+    </header>
+
+    <div class="main-container">
+        <div class="header-titles">
+            <h2>Como podemos ajudar?</h2>
+            <p>Selecione a categoria para abrir o seu chamado.</p>
         </div>
-        <nav class="nav-menu">
-            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
-            <a href="/chamados" class="nav-item active"><i class="fas fa-headset"></i> Assistência</a>
-            <a href="/escalas" class="nav-item"><i class="fas fa-calendar-alt"></i> Escalas</a>
-        </nav>
+
+        <div class="categories-grid">
+            <div class="cat-card" onclick="abrirFormulario('Artes e Mídia', 'ic-arte', 'fa-paint-brush')">
+                <div class="cat-icon ic-arte"><i class="fas fa-paint-brush"></i></div>
+                <div class="cat-title">Artes e Mídia</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Cortes de Vídeo', 'ic-video', 'fa-video')">
+                <div class="cat-icon ic-video"><i class="fas fa-video"></i></div>
+                <div class="cat-title">Cortes de Vídeo</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Transmissão / Live', 'ic-live', 'fa-broadcast-tower')">
+                <div class="cat-icon ic-live"><i class="fas fa-broadcast-tower"></i></div>
+                <div class="cat-title">Transmissão / Live</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Áudio / Microfones', 'ic-audio', 'fa-microphone')">
+                <div class="cat-icon ic-audio"><i class="fas fa-microphone"></i></div>
+                <div class="cat-title">Áudio / Microfones</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Internet / Rede', 'ic-rede', 'fa-network-wired')">
+                <div class="cat-icon ic-rede"><i class="fas fa-network-wired"></i></div>
+                <div class="cat-title">Internet / Rede</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Software / App', 'ic-soft', 'fa-laptop-code')">
+                <div class="cat-icon ic-soft"><i class="fas fa-laptop-code"></i></div>
+                <div class="cat-title">Software / App</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Hardware / Periféricos', 'ic-hard', 'fa-keyboard')">
+                <div class="cat-icon ic-hard"><i class="fas fa-keyboard"></i></div>
+                <div class="cat-title">Hardware / Físico</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Energia / Elétrica', 'ic-energia', 'fa-bolt')">
+                <div class="cat-icon ic-energia"><i class="fas fa-bolt"></i></div>
+                <div class="cat-title">Energia / Elétrica</div>
+            </div>
+            <div class="cat-card" onclick="abrirFormulario('Outros Suportes', 'ic-outros', 'fa-question')">
+                <div class="cat-icon ic-outros"><i class="fas fa-question"></i></div>
+                <div class="cat-title">Outros Suportes</div>
+            </div>
+        </div>
+
+        <div class="admin-qr-section" id="area-qrcode">
+            <p style="font-size: 13px; color: #666; font-weight: bold;"><i class="fas fa-shield-alt"></i> Visão de Administrador</p>
+            <button class="btn-qr" onclick="baixarQRCode()"><i class="fas fa-qrcode"></i> Baixar QR Code do Portal</button>
+            <canvas id="qr-canvas"></canvas>
+        </div>
+
     </div>
 
-    <main class="main-content">
-        <div class="header-title">
-            <h2>Selecione uma categoria para sua solicitação:</h2>
-            <p style="color: #666; font-size: 14px; margin-top: 5px;">Sua solicitação será registrada em seu nome e enviada para a equipe responsável.</p>
-        </div>
-
-        <div class="category-grid">
-            <a href="#" class="category-card" onclick="abrirFormulario('Artes e Mídia')"><i class="fas fa-paint-brush"></i> <span>Artes e Mídia</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Cortes de Vídeo')"><i class="fas fa-video"></i> <span>Cortes de Vídeo</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Transmissão / Live')"><i class="fas fa-broadcast-tower"></i> <span>Transmissão / Live</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Áudio / Microfones')"><i class="fas fa-microphone"></i> <span>Áudio / Microfones</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Internet / Rede')"><i class="fas fa-network-wired"></i> <span>Internet / Rede</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Software / App')"><i class="fas fa-laptop-code"></i> <span>Software / App</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Periféricos / Hardware')"><i class="fas fa-keyboard"></i> <span>Periféricos / Hardware</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Energia / Elétrica')"><i class="fas fa-bolt"></i> <span>Energia / Elétrica</span></a>
-            <a href="#" class="category-card" onclick="abrirFormulario('Outros Suportes')"><i class="fas fa-question-circle"></i> <span>Outros Suportes</span></a>
-        </div>
-    </main>
-
-    <div id="modal-solicitacao" class="modal">
+    <div id="modal-chamado" class="modal">
         <div class="modal-content">
-            <span class="close-btn" onclick="fecharFormulario()">&times;</span>
-            <h2 style="color: #e94560; margin-bottom: 5px;">Nova Solicitação</h2>
-            <p id="categoria-selecionada" style="background: #eee; display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 20px; color: #333;"></p>
+            <span class="close-btn" onclick="fecharModal()">&times;</span>
+            
+            <div class="modal-header">
+                <div class="cat-icon" id="modal-icon"></div>
+                <div>
+                    <p style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">Categoria Selecionada</p>
+                    <h3 id="modal-categoria-texto">Artes e Mídia</h3>
+                </div>
+            </div>
 
             <div class="form-group">
-                <label>Descreva o que você precisa:</label>
-                <textarea id="desc-chamado" rows="5" placeholder="Digite os detalhes da arte, os links de referência ou o problema técnico que está ocorrendo..." required></textarea>
+                <label>Seu Nome Completo:</label>
+                <input type="text" id="req-nome" placeholder="Digite seu nome" required>
+            </div>
+            <div class="form-group">
+                <label>Título Breve do Problema/Pedido:</label>
+                <input type="text" id="req-titulo" placeholder="Ex: Microfone 2 sem som" required>
+            </div>
+            <div class="form-group">
+                <label>Prioridade:</label>
+                <select id="req-prioridade">
+                    <option value="Baixa">Baixa (Pode esperar)</option>
+                    <option value="Média" selected>Média (Normal)</option>
+                    <option value="Alta">Alta (Urgente / Impede o culto)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Detalhes do Pedido:</label>
+                <textarea id="req-desc" rows="4" placeholder="Explique o que precisa ser feito ou o que parou de funcionar..." required></textarea>
             </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="tem-anexo">
-                <label for="tem-anexo"><strong>Tenho arquivos ou fotos referentes a este chamado.</strong><br>O responsável entrará em contato para recolher os anexos.</label>
-            </div>
-
-            <button class="btn-submit" onclick="registrarChamadoInterno()">Registrar Solicitação</button>
+            <button class="btn-enviar" id="btn-submit" onclick="enviarChamado()">Abrir Chamado</button>
         </div>
     </div>
 
     <script>
         let categoriaAtual = '';
-        let usuarioLogado = null;
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast ${tipo}`;
-            let icon = '<i class="fas fa-check-circle"></i>';
-            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
-            if(tipo === 'warning') icon = '<i class="fas fa-exclamation-circle"></i>';
-            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            toast.className = `toast`;
+            let icon = '✅'; 
+            if(tipo === 'error') { icon = '❌'; toast.style.borderLeftColor = '#dc3545'; }
+            if(tipo === 'warning') { icon = '⚠️'; toast.style.borderLeftColor = '#f39c12'; }
+            
+            toast.innerHTML = `${icon} <span style="margin-left:8px;">${mensagem}</span>`;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
         window.onload = () => {
+            // Verifica se tem usuário logado para mostrar o botão de QR Code
             const userStore = localStorage.getItem('usuarioLogado');
-            if (!userStore) {
-                window.location.href = '/';
-                return;
+            if (userStore) {
+                const usuario = JSON.parse(userStore);
+                if (usuario.perfil === 'ADMIN') {
+                    document.getElementById('area-qrcode').style.display = 'flex';
+                }
+            } else {
+                // Se não estiver logado, muda o botão de voltar para levar ao login
+                document.getElementById('btn-back').href = '/';
             }
-            usuarioLogado = JSON.parse(userStore);
         };
 
-        function abrirFormulario(categoria) {
+        function abrirFormulario(categoria, corClasse, iconeClass) {
             categoriaAtual = categoria;
-            document.getElementById('categoria-selecionada').innerText = `Categoria: ${categoria}`;
-            document.getElementById('desc-chamado').value = '';
-            document.getElementById('tem-anexo').checked = false;
-            document.getElementById('modal-solicitacao').style.display = 'flex';
+            document.getElementById('modal-categoria-texto').innerText = categoria;
+            
+            const iconDiv = document.getElementById('modal-icon');
+            iconDiv.className = `cat-icon ${corClasse}`;
+            iconDiv.innerHTML = `<i class="fas ${iconeClass}"></i>`;
+            
+            document.getElementById('modal-chamado').style.display = 'flex';
         }
 
-        function fecharFormulario() {
-            document.getElementById('modal-solicitacao').style.display = 'none';
+        function fecharModal() {
+            document.getElementById('modal-chamado').style.display = 'none';
         }
 
-        async function registrarChamadoInterno() {
-            const descricao = document.getElementById('desc-chamado').value;
-            const temAnexo = document.getElementById('tem-anexo').checked;
+        async function enviarChamado() {
+            const requerente = document.getElementById('req-nome').value.trim();
+            const titulo = document.getElementById('req-titulo').value.trim();
+            const prioridade = document.getElementById('req-prioridade').value;
+            const descricao = document.getElementById('req-desc').value.trim();
 
-            if (!descricao) {
-                mostrarToast("Por favor, descreva o que você precisa no campo de texto.", "warning");
+            if (!requerente || !titulo || !descricao) {
+                mostrarToast("Por favor, preencha todos os campos obrigatórios.", "warning");
                 return;
             }
 
-            const requerenteFinal = `${usuarioLogado.user} [${usuarioLogado.perfil}]`;
-            
-            let descricaoFinal = `📝 Detalhes da Solicitação:\n${descricao}`;
-            if (temAnexo) {
-                descricaoFinal += `\n\n🚨 ATENÇÃO: O solicitante interno possui arquivos/fotos. Entre em contato para recolher.`;
-            }
-
-            const dadosChamado = {
-                titulo: `Solicitação Interna: ${categoriaAtual}`,
-                categoria: categoriaAtual,
-                prioridade: "Média",
-                requerente: requerenteFinal,
-                descricao: descricaoFinal,
-                progresso: 100
-            };
-
-            const btn = document.querySelector('.btn-submit');
-            btn.innerText = 'Registrando...';
+            const btn = document.getElementById('btn-submit');
+            btn.innerText = "Enviando...";
             btn.disabled = true;
 
+            const payload = {
+                titulo: titulo,
+                categoria: categoriaAtual,
+                prioridade: prioridade,
+                requerente: requerente,
+                descricao: descricao,
+                progresso: 0 // Começa com 0%
+            };
+
             try {
-                const resposta = await fetch('/api/chamados', {
+                const res = await fetch('/api/chamados', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dadosChamado)
+                    body: JSON.stringify(payload)
                 });
 
-                if (resposta.ok) {
-                    mostrarToast("Chamado interno registrado com sucesso!", "success");
+                if (res.ok) {
+                    mostrarToast("Chamado aberto com sucesso! Nossa equipe foi notificada.", "success");
+                    
+                    // Dispara notificação push para os Admins/Líderes avisando do chamado
+                    fetch('/api/notificar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            titulo: "🚨 Novo Chamado: " + categoriaAtual, 
+                            mensagem: `${requerente} abriu um chamado: ${titulo}.` 
+                        })
+                    });
+
                     setTimeout(() => {
-                        window.location.href = '/chamados'; 
+                        fecharModal();
+                        document.getElementById('req-nome').value = '';
+                        document.getElementById('req-titulo').value = '';
+                        document.getElementById('req-desc').value = '';
                     }, 1500);
                 } else {
-                    mostrarToast("Erro ao registrar chamado.", "error");
-                    btn.innerText = 'Registrar Solicitação';
-                    btn.disabled = false;
+                    mostrarToast("Erro ao processar solicitação.", "error");
                 }
-            } catch (erro) {
-                mostrarToast("Erro de conexão com o servidor.", "error");
-                btn.innerText = 'Registrar Solicitação';
+            } catch (err) {
+                mostrarToast("Erro de conexão.", "error");
+            } finally {
+                btn.innerText = "Abrir Chamado";
                 btn.disabled = false;
             }
+        }
+
+        // ================= GERADOR DE QR CODE =================
+        function baixarQRCode() {
+            // Pega a URL exata da página atual
+            const linkAcesso = window.location.href; 
+            
+            // Inicia a biblioteca QRious
+            const qr = new QRious({
+                element: document.getElementById('qr-canvas'),
+                value: linkAcesso,
+                size: 800, // Imagem em alta resolução para impressão
+                background: 'white',
+                foreground: '#16213e', // Cor escurecida do layout
+                level: 'H'
+            });
+
+            // Converte o canvas para imagem PNG e força o download
+            const canvas = document.getElementById('qr-canvas');
+            const urlImagem = canvas.toDataURL("image/png");
+            
+            const linkDownload = document.createElement('a');
+            linkDownload.href = urlImagem;
+            linkDownload.download = 'QRCode-Suporte-CSC.png';
+            document.body.appendChild(linkDownload);
+            linkDownload.click();
+            document.body.removeChild(linkDownload);
+            
+            mostrarToast("Download do QR Code iniciado!", "success");
         }
     </script>
 </body>
