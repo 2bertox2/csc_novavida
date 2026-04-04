@@ -2,443 +2,388 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle - GLPI Live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Assistência e Gestão - CSC Live</title>
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { display: flex; background-color: #f4f7f6; height: 100vh; overflow: hidden; }
-        .sidebar { width: 240px; background-color: #1a1a2e; color: white; display: flex; flex-direction: column; transition: 0.3s; }
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #2c2c44; }
-        .sidebar-header img { width: 120px; }
-        .nav-menu { flex: 1; padding: 10px 0; }
-        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #a2a2bd; text-decoration: none; transition: 0.2s; }
-        .nav-item:hover, .nav-item.active { background-color: #e94560; color: white; }
-        .nav-item i { width: 20px; text-align: center; }
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        .top-bar { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; padding: 0 25px; justify-content: space-between; }
-        .search-box { background: #eee; padding: 8px 15px; border-radius: 20px; width: 300px; display: flex; align-items: center; gap: 10px; }
-        .search-box input { border: none; background: transparent; outline: none; width: 100%; }
-        .container { padding: 25px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .tab-btn.active { background: #e94560; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .card-table { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; color: #666; text-align: left; padding: 15px; border-bottom: 2px solid #eee; text-transform: uppercase; font-size: 11px; }
-        td { padding: 15px; border-bottom: 1px solid #eee; color: #333; }
-        tr:hover { background-color: #f9f9f9; }
-        .prio-tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; color: white; }
-        .prio-baixa { background: #ffc107; color: black; }
-        .prio-media { background: #17a2b8; }
-        .prio-alta { background: #dc3545; }
-        .progress-container { width: 100px; background: #eee; height: 8px; border-radius: 10px; overflow: hidden; margin-top: 5px; }
-        .progress-bar { height: 100%; background: #28a745; transition: 0.5s; }
-        .progress-text { font-size: 10px; font-weight: bold; display: block; }
-        .btn-new { background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; transition: 0.3s; }
-        .btn-new:hover { background: #d13d56; }
-        .btn-acao { padding: 6px 12px; background: #007AFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s;}
-        .btn-acao:hover { filter: brightness(0.9); }
-        .form-user { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px;}
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; outline: none; }
-        .form-group input:focus, .form-group select:focus { border-color: #e94560; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #121220; color: #fff; padding-bottom: 30px; overflow-x: hidden; }
         
-        /* SISTEMA DE NOTIFICAÇÕES (TOAST) */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; min-width: 300px; font-weight: 600; font-size: 14px; }
-        .toast i { font-size: 20px; }
-        .toast.success { border-left-color: #28a745; }
-        .toast.success i { color: #28a745; }
-        .toast.warning { border-left-color: #ffc107; }
-        .toast.warning i { color: #ffc107; }
-        .toast.error { border-left-color: #dc3545; }
-        .toast.error i { color: #dc3545; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+        /* CABEÇALHO PADRÃO APP */
+        .app-header { display: flex; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; gap: 15px; }
+        .btn-voltar { color: #a2a2bd; text-decoration: none; font-size: 20px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: 0.3s;}
+        .btn-voltar:active { transform: scale(0.9); }
+        .page-title { font-size: 18px; font-weight: 800; color: #e94560; letter-spacing: 0.5px; margin: 0;}
 
-        /* MODAL CUSTOMIZADO (CONFIRMAÇÃO) */
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content-confirm { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: scaleUp 0.2s ease forwards; }
-        .modal-content-confirm i { font-size: 50px; color: #dc3545; margin-bottom: 15px; display: block; }
-        .modal-content-confirm h3 { color: #333; margin-bottom: 10px; font-size: 20px; }
-        .modal-content-confirm p { color: #666; margin-bottom: 25px; font-size: 14px; }
-        .modal-btns { display: flex; gap: 15px; justify-content: center; }
-        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
 
-        /* MODAL DE DETALHES DO CHAMADO */
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: scaleUp 0.2s ease forwards; }
-        .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
-        .close-btn:hover { color: #000; }
-        .desc-box { background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin: 15px 0; white-space: pre-wrap; font-size: 14px; color: #333; max-height: 200px; overflow-y: auto; }
-        .modal-infos { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        /* SISTEMA DE ABAS (TABS) PARA MOBILE */
+        .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+        .tab-btn { flex: 1; min-width: 120px; padding: 14px; background: #16213e; border: 1px solid rgba(255,255,255,0.05); color: #a2a2bd; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.3s; white-space: nowrap;}
+        .tab-btn.active { background: #e94560; color: #fff; border-color: #e94560; box-shadow: 0 4px 10px rgba(233, 69, 96, 0.3);}
+        
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ÁREA DE CONTEÚDO E TABELAS */
+        .content-card { background: #fff; padding: 20px; border-radius: 16px; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 20px;}
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;}
+        .section-header h2 { font-size: 18px; text-transform: uppercase; color: #333;}
+        
+        .btn-add { background: #007AFF; color: #fff; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;}
+        .btn-add:hover { background: #0056b3; }
+
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-weight: 500; font-size: 13px; min-width: 700px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background: #f8f9fa; text-transform: uppercase; font-weight: 800; color: #333;}
+        
+        /* STATUS BADGES */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #fff;}
+        .bg-pendente { background-color: #dc3545; }
+        .bg-andamento { background-color: #f39c12; }
+        .bg-concluido { background-color: #28a745; }
+
+        .btn-sm { padding: 6px 10px; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12px; font-weight: bold;}
+        .btn-edit { background-color: #007AFF; }
+        .btn-delete { background-color: #dc3545; }
+
+        /* TOAST E MODAL */
+        #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px;}
+        .modal-content { background-color: #16213e; padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; border: 1px solid rgba(255,255,255,0.1); color: #fff;}
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; font-weight: bold; color: #a2a2bd; cursor: pointer; }
+        
+        .form-group { margin-bottom: 15px; text-align: left;}
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #a2a2bd; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #fff; outline: none; font-size: 14px;}
+        .btn-salvar-modal { width: 100%; padding: 14px; background: #e94560; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px;}
+
+        /* BARRA DE PROGRESSO */
+        .progress-container { width: 100%; background: #eee; border-radius: 10px; overflow: hidden; height: 8px; margin-top: 5px;}
+        .progress-bar { height: 100%; background: #28a745; transition: 0.4s; }
+
+        @media (max-width: 768px) {
+            .section-header { flex-direction: column; align-items: flex-start; }
+            .btn-add { width: 100%; justify-content: center; }
+            table { font-size: 12px; }
+            th, td { padding: 8px; }
+        }
     </style>
 </head>
 <body>
-
     <div id="toast-container"></div>
 
-    <div id="custom-confirm" class="modal">
-        <div class="modal-content-confirm">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Atenção</h3>
-            <p id="confirm-msg">Deseja realmente continuar com esta ação?</p>
-            <div class="modal-btns">
-                <button onclick="fecharConfirm()" class="btn-new" style="background: #6c757d; flex: 1;">Cancelar</button>
-                <button id="btn-confirm-yes" class="btn-new" style="background: #dc3545; flex: 1;">Sim, Excluir</button>
-            </div>
+    <header class="app-header">
+        <a href="/dashboard" class="btn-voltar"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title">Gestão e Assistência</h1>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="tabs-container" id="admin-tabs" style="display: none;">
+            <button class="tab-btn active" onclick="mudarAba('aba-chamados', this)"><i class="fas fa-ticket-alt"></i> Chamados</button>
+            <button class="tab-btn" onclick="mudarAba('aba-usuarios', this)"><i class="fas fa-users"></i> Equipe</button>
+            <button class="tab-btn" onclick="mudarAba('aba-aniversarios', this)"><i class="fas fa-birthday-cake"></i> Aniversários</button>
         </div>
-    </div>
 
-    <div id="modal-chamado" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="fecharModal()">&times;</span>
-            <h2 id="modal-titulo" style="color: #e94560; margin-bottom: 5px;">Título do Chamado</h2>
-            <span id="modal-categoria" style="background: #eee; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Categoria</span>
-            
-            <div class="modal-infos">
-                <div>
-                    <p style="font-size: 13px; color: #666;">Requerente:</p>
-                    <strong id="modal-req">Nome</strong>
+        <div id="aba-chamados" class="tab-content active">
+            <div class="content-card">
+                <div class="section-header">
+                    <h2>Quadro de Chamados</h2>
                 </div>
-                <div>
-                    <p style="font-size: 13px; color: #666;">Atribuído a:</p>
-                    <strong id="modal-atrib" style="color: #007AFF;">-</strong>
-                </div>
-            </div>
-
-            <div class="desc-box" id="modal-desc">
-                Aqui vai aparecer a descrição completa da arte e os dados.
-            </div>
-
-            <div class="modal-infos" style="align-items: flex-end; background: #f4f7f6; padding: 15px; border-radius: 6px;">
-                <div class="form-group" style="width: 100%;">
-                    <label>Status do Chamado:</label>
-                    <select id="modal-status">
-                        <option value="Pendente">Pendente</option>
-                        <option value="Em Andamento">Em Andamento</option>
-                        <option value="Concluído">Concluído</option>
-                    </select>
-                </div>
-                <div class="form-group" style="width: 100%;">
-                    <label>Progresso Restante (%):</label>
-                    <input type="number" id="modal-progresso" min="0" max="100">
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <button class="btn-new" onclick="assumirChamado()" style="background: #333; flex: 1;"><i class="fas fa-hand-paper"></i> Assumir</button>
-                <button class="btn-new" onclick="salvarEdicaoChamado()" style="background: #28a745; flex: 2;"><i class="fas fa-save"></i> Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
-        </div>
-        <nav class="nav-menu">
-            <a href="/dashboard" class="nav-item"><i class="fas fa-home"></i> Home</a>
-            <a href="/chamados" class="nav-item active"><i class="fas fa-headset"></i> Assistência</a>
-            <a href="/escalas" class="nav-item"><i class="fas fa-calendar-alt"></i> Escalas</a>
-        </nav>
-    </div>
-
-    <div class="main-content">
-        <header class="top-bar">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Pesquisar...">
-            </div>
-            <div class="user-info">
-                <strong id="header-user-name">Usuário</strong> <i class="fas fa-user-circle"></i>
-            </div>
-        </header>
-
-        <div class="container">
-            <div class="tabs">
-                <button class="tab-btn active" onclick="mudarAba('helpdesk')">Help Desk & Solicitações</button>
-                <button class="tab-btn" id="btn-tab-usuarios" onclick="mudarAba('usuarios')" style="display: none;">Gestão de Usuários</button>
-                <button class="tab-btn" id="btn-tab-niver" onclick="mudarAba('aniversarios')" style="display: none;">Aniversários</button>
-            </div>
-
-            <div id="aba-helpdesk" class="tab-content active">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>Quadro de Chamados / Solicitações</h2>
-                    <a href="/abrir-chamado" class="btn-new"><i class="fas fa-plus"></i> Novo Chamado Interno</a>
-                </div>
-                <div class="card-table">
-                    <table>
+                <div class="table-responsive">
+                    <table id="tabela-chamados">
                         <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Título / Categoria</th>
-                                <th>Status</th>
                                 <th>Requerente</th>
-                                <th>Atribuído a</th>
-                                <th>Tempo (SLA)</th>
+                                <th>Status / Progresso</th>
+                                <th>Atribuído A</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="lista-chamados-body"></tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <div id="aba-usuarios" class="tab-content">
-                <h2>Controle de Acessos</h2>
-                <div class="form-user">
-                    <div class="form-group"><label>Usuário:</label><input type="text" id="novo-user" placeholder="ex: joao.silva"></div>
-                    <div class="form-group"><label>Senha:</label><input type="text" id="nova-senha" placeholder="ex: equipeH"></div>
-                    <div class="form-group">
-                        <label>Perfil:</label>
-                        <select id="novo-perfil"><option value="MEMBRO">Membro</option><option value="LIDER">Líder</option><option value="ADMIN">Admin</option></select>
-                    </div>
-                    <div class="form-group"><label>Equipe (A-G):</label><input type="text" id="nova-equipe" placeholder="ex: C" style="width: 80px;"></div>
-                    <button class="btn-new" onclick="criarUsuario()" style="height: 40px; margin-bottom: 2px;"><i class="fas fa-user-plus"></i> Adicionar</button>
+        <div id="aba-usuarios" class="tab-content">
+            <div class="content-card">
+                <div class="section-header">
+                    <h2>Membros do Sistema</h2>
+                    <button class="btn-add" onclick="abrirModalUsuario()"><i class="fas fa-user-plus"></i> Novo Membro</button>
                 </div>
-                <div class="card-table">
-                    <table>
-                        <thead><tr><th>ID</th><th>Usuário</th><th>Perfil</th><th>Equipe</th><th>Ação</th></tr></thead>
-                        <tbody id="lista-usuarios-body"></tbody>
+                <div class="table-responsive">
+                    <table id="tabela-usuarios">
+                        <thead><tr><th>ID</th><th>Usuário</th><th>Perfil</th><th>Equipe</th><th>Ações</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <div id="aba-aniversarios" class="tab-content">
-                <h2>Controle de Aniversários</h2>
-                <div class="form-user">
-                    <div class="form-group"><label>Nome do Membro:</label><input type="text" id="niver-nome" placeholder="Nome Completo"></div>
-                    <div class="form-group"><label>Dia:</label><input type="number" id="niver-dia" min="1" max="31" style="width: 80px;"></div>
-                    <div class="form-group"><label>Mês:</label><input type="number" id="niver-mes" min="1" max="12" style="width: 80px;"></div>
-                    <button class="btn-new" onclick="criarAniversario()" style="height: 40px; margin-bottom: 2px;"><i class="fas fa-calendar-plus"></i> Adicionar Data</button>
+        <div id="aba-aniversarios" class="tab-content">
+            <div class="content-card">
+                <div class="section-header">
+                    <h2>Datas Especiais</h2>
+                    <button class="btn-add" onclick="abrirModalNiver()"><i class="fas fa-plus"></i> Adicionar</button>
                 </div>
-                <div class="card-table">
-                    <table>
-                        <thead><tr><th>ID</th><th>Nome</th><th>Data (Dia/Mês)</th><th>Ação</th></tr></thead>
-                        <tbody id="lista-aniversarios-body"></tbody>
+                <div class="table-responsive">
+                    <table id="tabela-aniversarios">
+                        <thead><tr><th>Nome</th><th>Dia</th><th>Mês</th><th>Ações</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
+        </div>
+
+    </div>
+
+    <div id="modal-chamado" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal('modal-chamado')">&times;</span>
+            <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-edit"></i> Atualizar Chamado</h2>
+            <input type="hidden" id="edit-chamado-id">
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="edit-status">
+                    <option value="Pendente">Pendente</option>
+                    <option value="Em Andamento">Em Andamento</option>
+                    <option value="Concluído">Concluído</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Progresso (%):</label>
+                <input type="number" id="edit-progresso" min="0" max="100">
+            </div>
+            <div class="form-group">
+                <label>Atribuir a:</label>
+                <input type="text" id="edit-atribuido" placeholder="Nome do técnico">
+            </div>
+            <button class="btn-salvar-modal" onclick="salvarEdicaoChamado()">Atualizar Ticket</button>
+        </div>
+    </div>
+
+    <div id="modal-usuario" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal('modal-usuario')">&times;</span>
+            <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-user-plus"></i> Novo Membro</h2>
+            <div class="form-group"><label>Usuário (Login):</label><input type="text" id="novo-user" placeholder="ex: joao.silva"></div>
+            <div class="form-group"><label>Senha:</label><input type="password" id="novo-senha"></div>
+            <div class="form-group">
+                <label>Perfil:</label>
+                <select id="novo-perfil"><option value="MEMBRO">Membro</option><option value="LIDER">Líder</option><option value="ADMIN">Administrador</option></select>
+            </div>
+            <div class="form-group">
+                <label>Equipe (Letra):</label>
+                <input type="text" id="novo-equipe" placeholder="A, B, C... ou NENHUMA" maxlength="10">
+            </div>
+            <button class="btn-salvar-modal" onclick="salvarUsuario()">Cadastrar</button>
+        </div>
+    </div>
+
+    <div id="modal-niver" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal('modal-niver')">&times;</span>
+            <h2 style="margin-bottom: 20px; font-size: 18px;"><i class="fas fa-birthday-cake"></i> Novo Aniversariante</h2>
+            <div class="form-group"><label>Nome Completo:</label><input type="text" id="niver-nome"></div>
+            <div class="form-group"><label>Dia:</label><input type="number" id="niver-dia" min="1" max="31"></div>
+            <div class="form-group"><label>Mês (Número):</label><input type="number" id="niver-mes" min="1" max="12"></div>
+            <button class="btn-salvar-modal" onclick="salvarNiver()">Cadastrar</button>
         </div>
     </div>
 
     <script>
         let usuarioAtual = null;
-        let chamadosGlobais = []; 
-        let idChamadoAtual = null; 
-        let callbackConfirmacao = null;
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast ${tipo}`;
-            let icon = '<i class="fas fa-check-circle"></i>';
-            if(tipo === 'error') icon = '<i class="fas fa-times-circle"></i>';
-            if(tipo === 'warning') icon = '<i class="fas fa-exclamation-circle"></i>';
-            toast.innerHTML = `${icon} <div>${mensagem}</div>`;
+            toast.className = `toast`;
+            let icon = '✅'; if(tipo==='warning') {icon='⚠️'; toast.style.borderLeftColor='#f39c12';} if(tipo==='error') {icon='❌'; toast.style.borderLeftColor='#dc3545';}
+            toast.innerHTML = `${icon} <span style="margin-left:8px;">${mensagem}</span>`;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
         }
-
-        function abrirConfirm(mensagem, acao) {
-            document.getElementById('confirm-msg').innerText = mensagem;
-            document.getElementById('custom-confirm').style.display = 'flex';
-            callbackConfirmacao = acao;
-        }
-
-        function fecharConfirm() {
-            document.getElementById('custom-confirm').style.display = 'none';
-            callbackConfirmacao = null;
-        }
-
-        document.getElementById('btn-confirm-yes').addEventListener('click', () => {
-            if(callbackConfirmacao) callbackConfirmacao();
-            fecharConfirm();
-        });
 
         window.onload = () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
-            document.getElementById('header-user-name').innerText = usuarioAtual.user;
 
             if (usuarioAtual.perfil === 'ADMIN') {
-                document.getElementById('btn-tab-usuarios').style.display = 'inline-block';
-                document.getElementById('btn-tab-niver').style.display = 'inline-block';
+                document.getElementById('admin-tabs').style.display = 'flex';
+            }
+            
+            carregarChamados();
+            if(usuarioAtual.perfil === 'ADMIN'){
                 carregarUsuarios();
                 carregarAniversarios();
             }
-            carregarChamadosDoBanco();
         };
 
-        function mudarAba(aba) {
+        function mudarAba(abaId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            if(aba === 'helpdesk') {
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
-                document.getElementById('aba-helpdesk').classList.add('active');
-            } else if (aba === 'usuarios') {
-                document.getElementById('btn-tab-usuarios').classList.add('active');
-                document.getElementById('aba-usuarios').classList.add('active');
-            } else {
-                document.getElementById('btn-tab-niver').classList.add('active');
-                document.getElementById('aba-aniversarios').classList.add('active');
-            }
+            document.getElementById(abaId).classList.add('active');
+            btn.classList.add('active');
         }
 
-        async function carregarChamadosDoBanco() {
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        // ================= ROTINAS DE CHAMADOS =================
+        async function carregarChamados() {
             try {
-                const resposta = await fetch('/api/chamados');
-                chamadosGlobais = await resposta.json(); 
-                
-                const tbody = document.getElementById('lista-chamados-body');
+                const res = await fetch('/api/chamados');
+                const chamados = await res.json();
+                const tbody = document.querySelector('#tabela-chamados tbody');
                 tbody.innerHTML = '';
                 
-                chamadosGlobais.forEach(c => {
-                    let tr = document.createElement('tr');
-                    let cor = c.progresso < 20 ? "#dc3545" : (c.progresso < 50 ? "#ffc107" : "#28a745");
-                    tr.innerHTML = `
-                        <td>${c.id}</td>
-                        <td><strong>${c.titulo}</strong><br><small>${c.categoria}</small></td>
-                        <td><i class="fas fa-circle" style="color: ${c.status === 'Pendente' ? '#7f8c8d' : (c.status === 'Concluído' ? '#28a745' : '#f39c12')}"></i> ${c.status}</td>
-                        <td><strong>${c.requerente}</strong></td>
-                        <td>${c.atribuido}</td>
-                        <td><span class="progress-text">${c.progresso}% Restante</span><div class="progress-container"><div class="progress-bar" style="width: ${c.progresso}%; background: ${cor};"></div></div></td>
-                        <td><button class="btn-acao" onclick="abrirModal(${c.id})"><i class="fas fa-eye"></i> Detalhes</button></td>
+                chamados.forEach(c => {
+                    let corBadge = c.status === 'Concluído' ? 'bg-concluido' : (c.status === 'Em Andamento' ? 'bg-andamento' : 'bg-pendente');
+                    let botoes = '';
+                    if (usuarioAtual.perfil === 'ADMIN') {
+                        botoes = `<button class="btn-sm btn-edit" onclick="abrirEdicaoChamado(${c.id}, '${c.status}', ${c.progresso}, '${c.atribuido}')"><i class="fas fa-edit"></i> Atualizar</button>`;
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>#${c.id}</strong></td>
+                            <td>
+                                <div style="font-weight: bold;">${c.titulo}</div>
+                                <div style="font-size: 11px; color: #666;">${c.categoria} - Pri: ${c.prioridade}</div>
+                            </td>
+                            <td>${c.requerente}</td>
+                            <td>
+                                <span class="badge ${corBadge}">${c.status}</span>
+                                <div class="progress-container"><div class="progress-bar" style="width: ${c.progresso}%"></div></div>
+                            </td>
+                            <td>${c.atribuido}</td>
+                            <td>${botoes}</td>
+                        </tr>
                     `;
-                    tbody.appendChild(tr);
                 });
-            } catch (erro) { mostrarToast("Erro ao carregar os chamados.", "error"); }
+            } catch (err) { console.log(err); }
         }
 
-        function abrirModal(id) {
-            idChamadoAtual = id;
-            const chamado = chamadosGlobais.find(c => c.id === id);
-            
-            document.getElementById('modal-titulo').innerText = chamado.titulo;
-            document.getElementById('modal-categoria').innerText = chamado.categoria;
-            document.getElementById('modal-req').innerText = chamado.requerente;
-            document.getElementById('modal-atrib').innerText = chamado.atribuido;
-            document.getElementById('modal-desc').innerText = chamado.descricao; 
-            
-            document.getElementById('modal-status').value = chamado.status;
-            document.getElementById('modal-progresso').value = chamado.progresso;
-            
+        function abrirEdicaoChamado(id, status, progresso, atribuido) {
+            document.getElementById('edit-chamado-id').value = id;
+            document.getElementById('edit-status').value = status;
+            document.getElementById('edit-progresso').value = progresso;
+            document.getElementById('edit-atribuido').value = atribuido === '-' ? '' : atribuido;
             document.getElementById('modal-chamado').style.display = 'flex';
         }
 
-        function fecharModal() {
-            document.getElementById('modal-chamado').style.display = 'none';
-        }
-
-        function assumirChamado() {
-            document.getElementById('modal-atrib').innerText = usuarioAtual.user;
-            document.getElementById('modal-status').value = 'Em Andamento';
-            mostrarToast("Chamado atribuído a você.", "success");
-        }
-
         async function salvarEdicaoChamado() {
-            const status = document.getElementById('modal-status').value;
-            const progresso = document.getElementById('modal-progresso').value;
-            const atribuido = document.getElementById('modal-atrib').innerText;
+            const id = document.getElementById('edit-chamado-id').value;
+            const payload = {
+                status: document.getElementById('edit-status').value,
+                progresso: document.getElementById('edit-progresso').value,
+                atribuido: document.getElementById('edit-atribuido').value || '-'
+            };
+
+            const btn = document.querySelector('#modal-chamado .btn-salvar-modal');
+            btn.innerText = "Salvando...";
 
             try {
-                const response = await fetch(`/api/chamados/${idChamadoAtual}`, {
+                const res = await fetch(`/api/chamados/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status, atribuido, progresso })
+                    body: JSON.stringify(payload)
                 });
-
-                if (response.ok) {
-                    fecharModal();
-                    carregarChamadosDoBanco(); 
-                    mostrarToast("Chamado atualizado com sucesso!", "success");
-                } else {
-                    mostrarToast("Erro ao atualizar o chamado.", "error");
+                if(res.ok) {
+                    mostrarToast("Ticket atualizado!", "success");
+                    fecharModal('modal-chamado');
+                    carregarChamados();
                 }
-            } catch (err) {
-                mostrarToast("Erro de comunicação com o servidor.", "error");
-            }
+            } catch (err) { mostrarToast("Erro ao salvar.", "error"); }
+            btn.innerText = "Atualizar Ticket";
         }
 
+        // ================= ROTINAS DE USUÁRIOS =================
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
-                const usuarios = await res.json();
-                const tbody = document.getElementById('lista-usuarios-body');
+                const users = await res.json();
+                const tbody = document.querySelector('#tabela-usuarios tbody');
                 tbody.innerHTML = '';
-                usuarios.forEach(u => {
-                    tbody.innerHTML += `<tr><td>${u.id}</td><td><strong>${u.user}</strong></td><td>${u.perfil}</td><td>Eq. ${u.equipe}</td><td><button class="btn-acao" style="background:#dc3545;" onclick="deletarUsuario(${u.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+                users.forEach(u => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${u.id}</td><td><strong>${u.user}</strong></td><td>${u.perfil}</td><td>${u.equipe}</td>
+                            <td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/usuarios/${u.id}', carregarUsuarios)"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `;
                 });
-            } catch (erro) { console.error(erro); }
+            } catch (err) {}
         }
 
-        async function criarUsuario() {
-            const user = document.getElementById('novo-user').value, senha = document.getElementById('nova-senha').value;
-            const perfil = document.getElementById('novo-perfil').value, equipe = document.getElementById('nova-equipe').value || 'NENHUMA';
-            if(!user || !senha) return mostrarToast("Preencha Usuário e Senha.", "warning");
+        function abrirModalUsuario() {
+            document.getElementById('novo-user').value = ''; document.getElementById('novo-senha').value = ''; document.getElementById('novo-equipe').value = '';
+            document.getElementById('modal-usuario').style.display = 'flex';
+        }
+
+        async function salvarUsuario() {
+            const payload = { user: document.getElementById('novo-user').value, senha: document.getElementById('novo-senha').value, perfil: document.getElementById('novo-perfil').value, equipe: document.getElementById('novo-equipe').value.toUpperCase() };
+            if(!payload.user || !payload.senha) return mostrarToast("Preencha usuário e senha", "warning");
+            
             try {
-                const res = await fetch('/api/usuarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user, senha, perfil, equipe }) });
-                if (res.ok) { 
-                    mostrarToast("Usuário criado com sucesso!", "success"); 
-                    carregarUsuarios(); 
-                    document.getElementById('novo-user').value = '';
-                    document.getElementById('nova-senha').value = '';
-                } else {
-                    mostrarToast("Erro. Este usuário já existe.", "error");
-                }
-            } catch (err) { mostrarToast("Erro de comunicação.", "error"); }
+                const res = await fetch('/api/usuarios', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(res.ok){ mostrarToast("Usuário criado!", "success"); fecharModal('modal-usuario'); carregarUsuarios(); }
+                else mostrarToast("Usuário já existe.", "error");
+            } catch (err) { mostrarToast("Erro", "error"); }
         }
 
-        function deletarUsuario(id) {
-            abrirConfirm("Deseja realmente excluir o acesso deste usuário?", async () => {
-                await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
-                mostrarToast("Usuário excluído com sucesso.", "success");
-                carregarUsuarios();
-            });
-        }
-
+        // ================= ROTINAS DE ANIVERSÁRIOS =================
         async function carregarAniversarios() {
             try {
                 const res = await fetch('/api/aniversarios');
-                const aniversarios = await res.json();
-                const tbody = document.getElementById('lista-aniversarios-body');
+                const nivers = await res.json();
+                const tbody = document.querySelector('#tabela-aniversarios tbody');
                 tbody.innerHTML = '';
-                aniversarios.forEach(a => {
-                    tbody.innerHTML += `<tr><td>${a.id}</td><td><strong>${a.nome}</strong></td><td>${a.dia.toString().padStart(2, '0')}/${a.mes.toString().padStart(2, '0')}</td><td><button class="btn-acao" style="background:#dc3545;" onclick="deletarAniversario(${a.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+                nivers.forEach(n => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${n.nome}</strong></td><td>${n.dia.toString().padStart(2,'0')}</td><td>${n.mes.toString().padStart(2,'0')}</td>
+                            <td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/aniversarios/${n.id}', carregarAniversarios)"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `;
                 });
-            } catch (erro) { console.error(erro); }
+            } catch (err) {}
         }
 
-        async function criarAniversario() {
-            const nome = document.getElementById('niver-nome').value, dia = document.getElementById('niver-dia').value, mes = document.getElementById('niver-mes').value;
-            if(!nome || !dia || !mes) return mostrarToast("Preencha todos os campos do aniversário.", "warning");
+        function abrirModalNiver() {
+            document.getElementById('niver-nome').value = ''; document.getElementById('niver-dia').value = ''; document.getElementById('niver-mes').value = '';
+            document.getElementById('modal-niver').style.display = 'flex';
+        }
+
+        async function salvarNiver() {
+            const payload = { nome: document.getElementById('niver-nome').value, dia: parseInt(document.getElementById('niver-dia').value), mes: parseInt(document.getElementById('niver-mes').value) };
+            if(!payload.nome || !payload.dia || !payload.mes) return mostrarToast("Preencha todos os campos", "warning");
+            
             try {
-                const res = await fetch('/api/aniversarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome, dia, mes }) });
-                if (res.ok) { 
-                    mostrarToast("Aniversário registrado com sucesso!", "success"); 
-                    carregarAniversarios(); 
-                    document.getElementById('niver-nome').value = '';
-                    document.getElementById('niver-dia').value = '';
-                    document.getElementById('niver-mes').value = '';
-                }
-            } catch (err) { mostrarToast("Erro ao registrar aniversário.", "error"); }
+                const res = await fetch('/api/aniversarios', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if(res.ok){ mostrarToast("Aniversário salvo!", "success"); fecharModal('modal-niver'); carregarAniversarios(); }
+                else mostrarToast("Erro ao salvar.", "error");
+            } catch (err) {}
         }
 
-        function deletarAniversario(id) {
-            abrirConfirm("Deseja realmente excluir esta data de aniversário?", async () => {
-                await fetch(`/api/aniversarios/${id}`, { method: 'DELETE' });
-                mostrarToast("Data excluída com sucesso.", "success");
-                carregarAniversarios();
-            });
+        // ================= FUNÇÃO COMUM DE EXCLUSÃO =================
+        async function deletarRegistro(url, callbackRecarregar) {
+            if(confirm("Tem certeza que deseja excluir?")) {
+                try {
+                    const res = await fetch(url, { method: 'DELETE' });
+                    if(res.ok) { mostrarToast("Excluído com sucesso.", "success"); callbackRecarregar(); }
+                } catch (err) {}
+            }
         }
     </script>
 </body>
