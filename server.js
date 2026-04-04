@@ -23,7 +23,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
 }
 
 // Configuração do PostgreSQL em Nuvem
-const connectionString = process.env.DATABASE_URL || 'BNjhaVvttEzn8jQV2HhZknTOlTbOLetgNlAfM2OiS0oWd_ATWB3DmdYNwqORsuxm5PQ4n99aPKGuLIBXwk_UVeY';
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_jpUhIyC2Bi7O@ep-red-truth-acfzcveg-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
 
 const pool = new Pool({
     connectionString: connectionString,
