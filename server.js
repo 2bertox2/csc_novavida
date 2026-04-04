@@ -1,12 +1,26 @@
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
+const admin = require('firebase-admin');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Inicialização de Segurança do Firebase lendo as chaves do Render
+if (process.env.FIREBASE_PROJECT_ID) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        })
+    });
+    console.log("🔥 Firebase de Notificações inicializado com sucesso.");
+}
 
 // Configuração do PostgreSQL em Nuvem
 const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_jpUhIyC2Bi7O@ep-red-truth-acfzcveg-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
@@ -61,7 +75,14 @@ async function setupDatabase() {
             )
         `);
 
-        // INSERÇÃO INTELIGENTE DOS USUÁRIOS
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS push_tokens (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                token TEXT UNIQUE
+            )
+        `);
+
         const usuariosBase = [
             { nome_usuario: 'humberto.xavier', perfil: 'ADMIN', equipe: 'G', senha: 'equipeG' },
             { nome_usuario: 'carlos.alberto', perfil: 'ADMIN', equipe: 'A', senha: 'equipeA' },
@@ -90,7 +111,6 @@ async function setupDatabase() {
             );
         }
 
-        // INSERÇÃO INTELIGENTE DOS ANIVERSÁRIOS
         const aniversariosBase = [
             { nome: 'Rodrigo Botelho', dia: 21, mes: 11 },
             { nome: 'Wallysson Evaristo', dia: 17, mes: 4 },
@@ -118,7 +138,7 @@ async function setupDatabase() {
             );
         }
 
-        console.log("✅ Conexão com o Banco de Dados em Nuvem estabelecida.");
+        console.log("✅ Conexão com o Banco de Dados estabelecida.");
     } catch (err) {
         console.error("❌ Erro ao configurar o banco:", err);
     }
@@ -205,7 +225,7 @@ app.delete('/api/escalas/:mesAno', async (req, res) => {
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
 
-// --- ROTAS DE CHAMADOS E SOLICITAÇÕES ---
+// --- ROTAS DE CHAMADOS ---
 app.get('/api/chamados', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM chamados ORDER BY data_abertura DESC');
@@ -221,7 +241,6 @@ app.post('/api/chamados', async (req, res) => {
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
 
-// NOVA ROTA: ATUALIZAR CHAMADO EXISTENTE
 app.put('/api/chamados/:id', async (req, res) => {
     const { id } = req.params;
     const { status, atribuido, progresso } = req.body;
@@ -231,11 +250,97 @@ app.put('/api/chamados/:id', async (req, res) => {
             [status, atribuido, progresso, id]
         );
         res.json({ sucesso: true });
-    } catch (err) {
-        res.status(500).json({ sucesso: false, erro: err.message });
-    }
+    } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
 
+// --- MOTOR DE NOTIFICAÇÕES PUSH ---
+app.post('/api/push-token', async (req, res) => {
+    const { usuario, token } = req.body;
+    try {
+        await pool.query('INSERT INTO push_tokens (usuario, token) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING', [usuario, token]);
+        res.json({ sucesso: true });
+    } catch (err) { res.status(500).json({ sucesso: false }); }
+});
+
+async function dispararNotificacaoPush(titulo, corpo) {
+    if (!process.env.FIREBASE_PROJECT_ID) return;
+    try {
+        const resTokens = await pool.query('SELECT token FROM push_tokens');
+        const tokens = resTokens.rows.map(t => t.token);
+        
+        if (tokens.length > 0) {
+            const mensagem = {
+                notification: { title: titulo, body: corpo },
+                tokens: tokens
+            };
+            await admin.messaging().sendEachForMulticast(mensagem);
+            console.log(`Push enviado: ${titulo}`);
+        }
+    } catch (error) { console.error("Erro no push:", error); }
+}
+
+app.post('/api/notificar', async (req, res) => {
+    const { titulo, mensagem } = req.body;
+    await dispararNotificacaoPush(titulo, mensagem);
+    res.json({ sucesso: true });
+});
+
+// --- ROBÔ AUTOMÁTICO (CRON) - Todo dia às 07:00 da Manhã (Horário do Brasil) ---
+cron.schedule('0 7 * * *', async () => {
+    console.log("🤖 Iniciando Robô Matinal do CSC Live...");
+    try {
+        const hj = new Date();
+        // Garantindo que estamos lendo o dia no fuso brasileiro também
+        const dia = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric" });
+        const mes = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", month: "numeric" });
+        const ano = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: "numeric" });
+        const mesAno = `${ano}-${mes.toString().padStart(2, '0')}`;
+        const diaInt = parseInt(dia);
+
+        // 1. Checar Aniversários
+        const resNiver = await pool.query('SELECT nome FROM aniversarios WHERE dia = $1 AND mes = $2', [diaInt, parseInt(mes)]);
+        if (resNiver.rows.length > 0) {
+            for (let n of resNiver.rows) {
+                await dispararNotificacaoPush("🎉 Aniversário Hoje!", `Hoje é aniversário de ${n.nome}. Deseje os parabéns!`);
+            }
+        }
+
+        // 2. Checar Próxima Escala (A inteligência do "Chato")
+        const resEscala = await pool.query('SELECT dados_json FROM escalas WHERE mes_ano = $1', [mesAno]);
+        if (resEscala.rows.length > 0) {
+            const dados = JSON.parse(resEscala.rows[0].dados_json);
+            let proximoEvento = null;
+            
+            // Ordena a escala pelo dia para não pular nenhum
+            const linhasOrdenadas = dados.linhas.sort((a, b) => parseInt(a.dia) - parseInt(b.dia));
+            
+            // Procura o primeiro evento que seja hoje ou nos dias seguintes
+            for (let linha of linhasOrdenadas) {
+                if (parseInt(linha.dia) >= diaInt && linha.membros !== "-") {
+                    proximoEvento = linha;
+                    break;
+                }
+            }
+            
+            if (proximoEvento) {
+                const equipeNome = proximoEvento.equipe === 'MISTA' ? 'Mista' : proximoEvento.equipe;
+                if (parseInt(proximoEvento.dia) === diaInt) {
+                    await dispararNotificacaoPush(
+                        "📅 É HOJE! Escala do CSC", 
+                        `Hoje temos o evento: ${proximoEvento.evento}. A Equipe responsável é a ${equipeNome}. Preparem-se!`
+                    );
+                } else {
+                    await dispararNotificacaoPush(
+                        "📅 Lembrete de Escala", 
+                        `Atenção: O próximo evento será dia ${proximoEvento.dia} (${proximoEvento.evento}). A Equipe escalada é a ${equipeNome}.`
+                    );
+                }
+            }
+        }
+    } catch (error) { console.error("Erro no robô matinal:", error); }
+}, {
+    timezone: "America/Sao_Paulo" // Força o fuso horário oficial do Brasil!
+});
 
 // --- ROTAS DO FRONTEND ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
