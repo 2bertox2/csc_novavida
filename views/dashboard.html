@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - GLPI Live</title>
+    
+    <link rel="manifest" href="/public/manifest.json">
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
@@ -20,6 +27,9 @@
         
         .btn-logout { background-color: transparent; color: #e94560; border: 1px solid #e94560; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; text-decoration: none; }
         .btn-logout:hover { background-color: #e94560; color: #fff; }
+
+        .btn-notificacao { background-color: #007AFF; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-notificacao:hover { filter: brightness(1.1); }
         
         .main-content { padding: 40px 20px; flex: 1; max-width: 1000px; margin: 0 auto; width: 100%; }
         .welcome-section { margin-bottom: 40px; text-align: center; }
@@ -33,6 +43,10 @@
         .card-icon { font-size: 48px; margin-bottom: 15px; }
         .card-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #e94560; }
         .card-desc { font-size: 14px; color: #a2a2bd; line-height: 1.4; }
+
+        .admin-megafone { background-color: #f39c12; border-color: #f39c12; }
+        .admin-megafone:hover { border-color: #fff; box-shadow: 0 10px 20px rgba(243, 156, 18, 0.3); }
+        .admin-megafone .card-title { color: #fff; }
         
         .footer { text-align: center; padding: 20px; background-color: #16213e; color: #a2a2bd; font-size: 12px; margin-top: auto; }
         
@@ -49,6 +63,19 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
+        /* MODAL MEGAFONE ADMIN */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; animation: scaleUp 0.2s ease forwards;}
+        .close-btn { position: absolute; right: 20px; top: 20px; font-size: 24px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .close-btn:hover { color: #000; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .form-group textarea, .form-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; outline: none; transition: 0.3s; color: #333;}
+        .form-group input:focus, .form-group textarea:focus { border-color: #f39c12; }
+        .btn-enviar-push { width: 100%; padding: 12px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-enviar-push:hover { background: #e67e22; }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         @media (max-width: 600px) {
             .navbar { flex-direction: column; gap: 15px; padding: 15px; }
             .user-name { display: none; }
@@ -61,11 +88,12 @@
 
     <header class="navbar">
         <div class="navbar-brand">
-            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo Nova Vida BH" onerror="this.style.display='none'">
+            <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
             <span class="navbar-title">CSC Live</span>
         </div>
         <div class="user-menu">
             <span class="user-name" id="nome-usuario-tela">Carregando...</span>
+            <button onclick="solicitarPermissaoNotificacao()" class="btn-notificacao" id="btn-sino"><i class="fas fa-bell"></i> Ativar Alertas</button>
             <button onclick="fazerLogout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
     </header>
@@ -76,7 +104,7 @@
             <p>Selecione o módulo que deseja acessar abaixo:</p>
         </div>
 
-        <div class="dashboard-grid">
+        <div class="dashboard-grid" id="grid-modulos">
             <a href="/escalas" class="card">
                 <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
                 <div class="card-title">Gestão de Escalas</div>
@@ -88,14 +116,37 @@
                 <div class="card-title">Help Desk & Chamados</div>
                 <div class="card-desc">Abra solicitações de artes, relate problemas na live e gerencie tickets.</div>
             </a>
-        </div>
+            
+            </div>
     </main>
 
     <footer class="footer">
         &copy; 2026 Ministério Live - Nova Vida BH. Desenvolvido por Equipe de TI.
     </footer>
 
+    <div id="modal-megafone" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharMegafone()">&times;</span>
+            <h2 style="color: #f39c12; margin-bottom: 5px;"><i class="fas fa-bullhorn"></i> Enviar Aviso</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Esta mensagem apitará no celular de toda a equipe.</p>
+
+            <div class="form-group">
+                <label>Título do Aviso:</label>
+                <input type="text" id="push-titulo" placeholder="Ex: Reunião Urgente" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Mensagem:</label>
+                <textarea id="push-msg" rows="4" placeholder="Digite o recado aqui..." required></textarea>
+            </div>
+
+            <button class="btn-enviar-push" onclick="dispararAvisoManual()">Disparar Notificação</button>
+        </div>
+    </div>
+
     <script>
+        let usuarioAtual = null;
+
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -117,14 +168,131 @@
                 window.location.href = '/';
                 return;
             }
-            const usuario = JSON.parse(userStore);
-            document.getElementById('nome-usuario-tela').innerHTML = `Olá, <strong>${usuario.user} (${usuario.perfil})</strong>`;
+            usuarioAtual = JSON.parse(userStore);
+            document.getElementById('nome-usuario-tela').innerHTML = `Olá, <strong>${usuarioAtual.user} (${usuarioAtual.perfil})</strong>`;
+
+            // Se for ADMIN, adiciona o Megafone na tela
+            if (usuarioAtual.perfil === 'ADMIN') {
+                const grid = document.getElementById('grid-modulos');
+                const cardMegafone = document.createElement('a');
+                cardMegafone.href = "#";
+                cardMegafone.className = "card admin-megafone";
+                cardMegafone.onclick = abrirMegafone;
+                cardMegafone.innerHTML = `
+                    <div class="card-icon"><i class="fas fa-bullhorn"></i></div>
+                    <div class="card-title">Disparar Aviso Geral</div>
+                    <div class="card-desc" style="color:#eee;">Envie notificações diretas para o celular de toda a equipe.</div>
+                `;
+                grid.appendChild(cardMegafone);
+            }
+
+            // Verifica se a notificação já está permitida para esconder o botão de ativar
+            if (Notification.permission === 'granted') {
+                document.getElementById('btn-sino').style.display = 'none';
+            }
         };
 
         function fazerLogout() {
             localStorage.removeItem('usuarioLogado');
             window.location.href = '/';
         }
+
+        // --- FUNÇÕES DO MEGAFONE (ADMIN) ---
+        function abrirMegafone(e) {
+            e.preventDefault();
+            document.getElementById('push-titulo').value = '';
+            document.getElementById('push-msg').value = '';
+            document.getElementById('modal-megafone').style.display = 'flex';
+        }
+
+        function fecharMegafone() {
+            document.getElementById('modal-megafone').style.display = 'none';
+        }
+
+        async function dispararAvisoManual() {
+            const titulo = document.getElementById('push-titulo').value;
+            const mensagem = document.getElementById('push-msg').value;
+
+            if(!titulo || !mensagem) return mostrarToast("Preencha o título e a mensagem.", "warning");
+
+            const btn = document.querySelector('.btn-enviar-push');
+            btn.innerText = "Enviando...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/notificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ titulo, mensagem })
+                });
+
+                if (res.ok) {
+                    mostrarToast("Aviso disparado para a equipe!", "success");
+                    fecharMegafone();
+                } else {
+                    mostrarToast("Erro ao disparar aviso.", "error");
+                }
+            } catch (err) {
+                mostrarToast("Erro de conexão.", "error");
+            } finally {
+                btn.innerText = "Disparar Notificação";
+                btn.disabled = false;
+            }
+        }
+
+        // --- LÓGICA DE FIREBASE FRONTEND ---
+        
+        // 1. Configuração que você copiou do Console do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC63gBQ7JdRTnNCpSpir1brYH754fcKq9M",
+            authDomain: "csc-live-bh.firebaseapp.com",
+            projectId: "csc-live-bh",
+            storageBucket: "csc-live-bh.firebasestorage.app",
+            messagingSenderId: "345272283586",
+            appId: "1:345272283586:web:648c1fb52622792406665b"
+        };
+
+        // 2. Inicializa o Firebase no navegador
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        // 3. Função que pede permissão e pega o Token do celular
+        async function solicitarPermissaoNotificacao() {
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    // ALERTA: Substitua a chave abaixo pela sua chave VAPID gerada no Firebase
+                    const token = await messaging.getToken({ 
+                        vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc" 
+                    });
+
+                    if (token) {
+                        // Envia o token para salvar no PostgreSQL
+                        await fetch('/api/push-token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuario: usuarioAtual.user, token: token })
+                        });
+                        
+                        mostrarToast("Notificações ativadas! Você receberá os alertas de escala.", "success");
+                        document.getElementById('btn-sino').style.display = 'none';
+                    } else {
+                        mostrarToast("Erro ao gerar chave do dispositivo.", "error");
+                    }
+                } else {
+                    mostrarToast("Você não permitiu as notificações no navegador.", "warning");
+                }
+            } catch (error) {
+                console.error(error);
+                mostrarToast("Este navegador não suporta notificações Push.", "error");
+            }
+        }
+
+        // 4. Receber notificação com o app aberto na tela
+        messaging.onMessage((payload) => {
+            mostrarToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`, 'success');
+        });
     </script>
 </body>
 </html>
