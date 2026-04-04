@@ -3,31 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gerador de Escalas - GLPI Live</title>
+    <title>Gestão de Escalas - CSC Live</title>
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #1a1a2e; color: #fff; padding: 20px; overflow-x: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #121220; color: #fff; padding-bottom: 30px; overflow-x: hidden; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto 20px; }
-        .btn-voltar { color: #a2a2bd; text-decoration: none; border: 1px solid #a2a2bd; padding: 10px 15px; border-radius: 5px; font-weight: bold; display: inline-block; text-align: center;}
+        /* CABEÇALHO COMPACTO */
+        .app-header { display: flex; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; gap: 15px; }
+        .btn-voltar { color: #a2a2bd; text-decoration: none; font-size: 20px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: 0.3s;}
+        .btn-voltar:active { transform: scale(0.9); }
+        .page-title { font-size: 18px; font-weight: 800; color: #e94560; letter-spacing: 0.5px; margin: 0;}
+
+        .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
+
+        /* PAINEL ADMIN OTIMIZADO (COMPACTO) */
+        .admin-panel { background: #16213e; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); display: none; }
+        .panel-heading { font-size: 13px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
         
-        .admin-panel { background: #16213e; padding: 20px; border-radius: 10px; max-width: 1100px; margin: 0 auto 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); display: none; }
-        .input-group { background: #1a1a2e; padding: 15px; border-radius: 8px; border: 1px solid #0f3460; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input, select, textarea { padding: 12px; background: #16213e; color: #fff; border: 1px solid #0f3460; border-radius: 5px; font-weight: bold; outline: none; font-size: 16px;}
-        button { padding: 12px 20px; background: #e94560; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; font-size: 14px;}
-        button:hover { background: #d13d56; }
+        .compact-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+        .compact-row input, .compact-row select { flex: 1; padding: 12px; background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: bold; outline: none; font-size: 15px;}
+        .compact-row input:focus { border-color: #007AFF; }
         
-        .table-container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; color: #000; }
+        .btn-icon { width: 45px; height: 45px; border: none; border-radius: 8px; color: #fff; font-size: 16px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.3s; flex-shrink: 0;}
+        .btn-icon:active { transform: scale(0.95); }
+        .btn-edit { background: #007AFF; }
+        .btn-new { background: #e94560; }
+        .btn-add { background: #AF52DE; }
+
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .action-buttons button { padding: 12px; border: none; border-radius: 8px; color: #fff; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase;}
+        .btn-save { background: #28a745; }
+        .btn-print { background: #6f42c1; }
+        .btn-delete { background: rgba(220, 53, 69, 0.1); color: #dc3545 !important; border: 1px solid #dc3545 !important; grid-column: span 2; display: none;}
+
+        /* TABELA E ÁREA DE CONTEÚDO */
+        .content-card { background: #fff; padding: 20px; border-radius: 16px; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        #titulo-mes { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; font-size: 18px; text-align: center; text-transform: uppercase;}
         
-        /* O SEGREDO DO MOBILE: Rolagem Horizontal na Tabela */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 5px;}
-        table { width: 100%; border-collapse: collapse; font-weight: bold; text-transform: uppercase; margin-top: 15px; min-width: 650px; }
-        
-        th, td { border: 2px solid #000; padding: 10px; text-align: center; vertical-align: middle; font-size: 14px;}
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-weight: bold; text-transform: uppercase; min-width: 600px; font-size: 13px; }
+        th, td { border: 2px solid #000; padding: 10px; text-align: center; vertical-align: middle; }
         th { background: #eee; }
         
+        select.select-equipe { width: 100%; padding: 8px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; font-size: 13px; outline: none;}
+        textarea { width: 100%; margin-top: 15px; padding: 12px; background: #f9f9f9; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; resize: vertical;}
+
+        /* CORES DAS EQUIPES */
         .bg-A { background-color: #FF3B30 !important; color: white; } 
         .bg-B { background-color: #007AFF !important; color: white; } 
         .bg-C { background-color: #FFCC00 !important; color: black; } 
@@ -36,51 +59,33 @@
         .bg-F { background-color: #5856D6 !important; color: white; } 
         .bg-G { background-color: #5AC8FA !important; color: black; } 
         .bg-MISTA { background-color: #FF9500 !important; color: white; }
-        .mista-checkboxes { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 12px; }
-        .mista-checkboxes label { background: #f0f0f0; padding: 8px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
         
-        .btn-row { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;}
-        .btn-salvar-db { background: #28a745; flex: 1; min-width: 250px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .btn-print-admin { background: #6f42c1; flex: 1; min-width: 250px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .btn-excluir { background: #dc3545; width: 100%; font-size: 16px; margin-top: 15px; display: none; }
-        .btn-exportar { background: #17a2b8; width: 100%; font-size: 16px; margin-top: 10px; display: none; }
-        textarea { width: 100%; margin-top: 10px; background: #f9f9f9; color: #333; border: 1px solid #ccc; font-size: 16px;}
-
-        #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
-        .toast { background: #fff; color: #333; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all; width: 100%;}
+        .mista-checkboxes { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; font-size: 11px; }
+        .mista-checkboxes label { background: #f0f0f0; padding: 6px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
         
-        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px;}
-        .modal-content { background-color: #fff; padding: 30px; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; }
-        .modal-btns { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap;}
-        .modal-btns button { flex: 1; min-width: 120px; }
+        /* TOAST & MODAL */
+        #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
+        .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px;}
+        .modal-content { background-color: #16213e; padding: 25px; border-radius: 16px; width: 100%; max-width: 350px; text-align: center; border: 1px solid rgba(255,255,255,0.1);}
+        .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #fff;}
 
-        /* REGRAS EXCLUSIVAS PARA CELULAR (MOBILE-FIRST) */
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .header { flex-direction: column; gap: 15px; text-align: center; }
-            .btn-voltar { width: 100%; }
-            .input-group { flex-direction: column; align-items: stretch; text-align: left; }
-            .input-group input, .input-group select, .input-group button { width: 100%; }
-            .btn-row { flex-direction: column; }
-            .btn-salvar-db, .btn-print-admin { width: 100%; }
-            .table-container { padding: 15px; }
-            h2#titulo-mes { font-size: 18px; text-align: center; }
-            th, td { font-size: 12px; padding: 8px; }
-        }
-
-        /* MÁGICA DA IMPRESSÃO (NÃO TOCA NISSO) */
+        /* MÁGICA DA IMPRESSÃO (PÁGINA ÚNICA) */
         @media print {
             @page { size: A4 portrait; margin: 10mm; }
             body { background: white; padding: 0; zoom: 0.90; overflow: visible;} 
-            .admin-panel, .btn-voltar, .header h1, .btn-exportar, #painel-leitura, .btn-excluir, #toast-container { display: none !important; }
-            .table-container { box-shadow: none; padding: 0; margin: 0; page-break-inside: avoid; }
+            .app-header, .admin-panel, #toast-container, .btn-exportar, #painel-leitura { display: none !important; }
+            .content-card { box-shadow: none; padding: 0; margin: 0; page-break-inside: avoid; }
             .table-responsive { overflow-x: visible; }
             table { width: 100%; font-size: 10px !important; margin-top: 5px; min-width: auto;}
             th, td { padding: 4px !important; border: 1px solid #000; }
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 10px; font-weight: bold;}
             textarea { border: none; outline: none; resize: none; overflow: hidden; font-size: 11px; margin-top: 5px; padding: 0;}
             #feriados-lista, #aniversarios-lista { font-size: 10px; margin-top: 5px; }
-            h2 { font-size: 16px; margin-bottom: 5px; padding-bottom: 5px; }
+            #titulo-mes { font-size: 16px; margin-bottom: 5px; padding-bottom: 5px; }
         }
     </style>
 </head>
@@ -89,70 +94,72 @@
 
     <div id="custom-confirm" class="modal">
         <div class="modal-content">
-            <h3 style="color:#333; margin-bottom:10px;">Atenção</h3>
-            <p id="confirm-msg" style="color:#666;">Deseja realmente continuar?</p>
+            <h3 style="color:#fff; margin-bottom:10px;"><i class="fas fa-exclamation-triangle" style="color:#dc3545"></i> Atenção</h3>
+            <p id="confirm-msg" style="color:#a2a2bd; font-size: 14px;">Deseja realmente continuar?</p>
             <div class="modal-btns">
-                <button onclick="document.getElementById('custom-confirm').style.display='none'" style="background: #6c757d;">Cancelar</button>
+                <button onclick="document.getElementById('custom-confirm').style.display='none'" style="background: #495057;">Cancelar</button>
                 <button id="btn-confirm-yes" style="background: #dc3545;">Sim, Excluir</button>
             </div>
         </div>
     </div>
 
-    <div class="header">
-        <a href="/dashboard" class="btn-voltar"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
-        <h1 style="color: #e94560; font-size: 24px;">ESCALAS</h1>
-    </div>
+    <header class="app-header">
+        <a href="/dashboard" class="btn-voltar"><i class="fas fa-arrow-left"></i></a>
+        <h1 class="page-title">Gestão de Escalas</h1>
+    </header>
 
-    <div class="admin-panel" id="painel-admin">
-        <div class="input-group">
-            <label style="width: 100%;">1. Selecione o Mês:</label>
-            <input type="month" id="mesAno">
-            <button onclick="carregarParaEdicao()" style="background: #007AFF;"><i class="fas fa-pencil-alt"></i> Editar</button>
-            <button onclick="gerarTabelaBase()"><i class="fas fa-table"></i> Nova</button>
-        </div>
-        <div class="input-group">
-            <label style="width: 100%;">2. Evento Extra:</label>
-            <input type="number" id="dia-extra" placeholder="Dia" min="1" max="31">
-            <input type="text" id="nome-extra" placeholder="Nome do Evento">
-            <button onclick="adicionarEventoExtra()" style="background: #AF52DE;"><i class="fas fa-plus"></i> Inserir</button>
-        </div>
-        
-        <div class="btn-row">
-            <button onclick="salvarEscalaNoBanco()" class="btn-salvar-db"><i class="fas fa-save"></i> Apenas Salvar</button>
-            <button onclick="salvarEImprimir()" class="btn-print-admin"><i class="fas fa-print"></i> Salvar e Gerar PDF</button>
-        </div>
-        
-        <button onclick="solicitarExclusao()" class="btn-excluir" id="btn-excluir-admin"><i class="fas fa-trash-alt"></i> Excluir Escala Oficial</button>
-    </div>
+    <div class="main-container">
+        <div class="admin-panel" id="painel-admin">
+            <div class="panel-heading"><i class="fas fa-cog"></i> Controles da Escala</div>
+            
+            <div class="compact-row">
+                <input type="month" id="mesAno">
+                <button onclick="carregarParaEdicao()" class="btn-icon btn-edit" title="Editar Escala Existente"><i class="fas fa-pencil-alt"></i></button>
+                <button onclick="gerarTabelaBase()" class="btn-icon btn-new" title="Gerar Nova Escala"><i class="fas fa-magic"></i></button>
+            </div>
 
-    <div class="table-container" id="escala-print">
-        <div class="input-group" id="painel-leitura" style="background: #f4f4f4; border: 1px solid #ddd; display: none;">
-            <label style="color: #000; width: 100%;">Visualizar Mês:</label>
-            <input type="month" id="mesAnoLeitura" style="background: #fff; color: #000; border: 1px solid #ccc;">
-            <button onclick="buscarEscalaSalva()" style="background: #007AFF;"><i class="fas fa-search"></i> Buscar</button>
+            <div class="compact-row">
+                <input type="number" id="dia-extra" placeholder="Dia" min="1" max="31" style="max-width: 70px;">
+                <input type="text" id="nome-extra" placeholder="Evento Extra">
+                <button onclick="adicionarEventoExtra()" class="btn-icon btn-add" title="Inserir Evento"><i class="fas fa-plus"></i></button>
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="salvarEscalaNoBanco()" class="btn-save"><i class="fas fa-save"></i> Salvar</button>
+                <button onclick="salvarEImprimir()" class="btn-print"><i class="fas fa-print"></i> Salvar & PDF</button>
+                <button onclick="solicitarExclusao()" class="btn-delete" id="btn-excluir-admin"><i class="fas fa-trash-alt"></i> Excluir Mês Completo</button>
+            </div>
         </div>
 
-        <h2 id="titulo-mes" style="border-bottom: 2px solid #000; padding-bottom: 10px;">SELECIONE UM MÊS</h2>
-        
-        <div class="table-responsive">
-            <table id="tabela-escala">
-                <thead>
-                    <tr>
-                        <th>DIA DA SEMANA / EVENTO</th>
-                        <th>DIA</th>
-                        <th>RESPONSÁVEL / EQUIPE</th>
-                        <th>MEMBROS ESCALADOS</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-tabela"></tbody>
-            </table>
+        <div class="content-card">
+            <div id="painel-leitura" style="display: none; gap: 10px; margin-bottom: 20px;">
+                <input type="month" id="mesAnoLeitura" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <button onclick="buscarEscalaSalva()" style="background: #007AFF; color: #fff; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold;"><i class="fas fa-search"></i> Buscar</button>
+            </div>
+
+            <h2 id="titulo-mes">SELECIONE UM MÊS NO PAINEL</h2>
+            
+            <div class="table-responsive">
+                <table id="tabela-escala">
+                    <thead>
+                        <tr>
+                            <th>DIA DA SEMANA / EVENTO</th>
+                            <th>DIA</th>
+                            <th>RESPONSÁVEL / EQUIPE</th>
+                            <th>MEMBROS ESCALADOS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+            </div>
+            
+            <div id="feriados-lista" style="margin-top: 15px; font-weight: bold; color: #dc3545; font-size: 13px;"></div>
+            <div id="aniversarios-lista" style="margin-top: 5px; font-weight: bold; color: #007AFF; font-size: 13px;"></div>
+            
+            <textarea id="obs-geral" rows="3" placeholder="Observações Gerais da Escala (Avisos, reuniões, etc.)"></textarea>
+            
+            <button onclick="window.print()" style="width: 100%; padding: 14px; background: #17a2b8; color: #fff; border: none; border-radius: 8px; font-weight: bold; margin-top: 15px; display: none;" id="btn-imprimir"><i class="fas fa-print"></i> IMPRIMIR PDF</button>
         </div>
-        
-        <div id="feriados-lista" style="margin-top: 15px; font-weight: bold; color: #dc3545; font-size: 14px;"></div>
-        <div id="aniversarios-lista" style="margin-top: 5px; font-weight: bold; color: #007AFF; font-size: 14px;"></div>
-        
-        <textarea id="obs-geral" rows="3" placeholder="Observações Gerais (Preenchido pelo Admin)"></textarea>
-        <button onclick="window.print()" class="btn-exportar" id="btn-imprimir"><i class="fas fa-print"></i> IMPRIMIR PDF</button>
     </div>
 
     <script>
@@ -165,7 +172,7 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast`;
-            let icon = '✅'; if(tipo==='warning') {icon='⚠️'; toast.style.borderLeftColor='#ffc107';} if(tipo==='error') {icon='❌'; toast.style.borderLeftColor='#dc3545';}
+            let icon = '✅'; if(tipo==='warning') {icon='⚠️'; toast.style.borderLeftColor='#f39c12';} if(tipo==='error') {icon='❌'; toast.style.borderLeftColor='#dc3545';}
             toast.innerHTML = `${icon} <span style="margin-left:8px;">${mensagem}</span>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
@@ -236,6 +243,8 @@
             const rows = Array.from(tbody.rows);
             rows.sort((a, b) => parseInt(a.cells[1].innerText) - parseInt(b.cells[1].innerText));
             rows.forEach(r => tbody.appendChild(r));
+            document.getElementById('dia-extra').value = '';
+            document.getElementById('nome-extra').value = '';
         }
 
         function tratarSelecaoEquipe(select) {
@@ -274,7 +283,7 @@
                     });
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                    document.getElementById('btn-excluir-admin').style.display = 'block';
+                    document.getElementById('btn-excluir-admin').style.display = 'grid';
                     mostrarToast("Escala carregada.", "success");
                 } else mostrarToast("Nenhuma escala salva.", "warning");
             } catch (err) { mostrarToast("Erro no servidor.", "error"); }
@@ -330,7 +339,7 @@
                 const response = await fetch('/api/escalas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesAno, dados: pacote }) });
                 if (response.ok) { 
                     if(!isSilent) mostrarToast("Escala salva e equipe notificada!", "success"); 
-                    document.getElementById('btn-excluir-admin').style.display = 'block'; 
+                    document.getElementById('btn-excluir-admin').style.display = 'grid'; 
                     return true;
                 }
             } catch (err) { mostrarToast("Erro ao salvar.", "error"); return false; }
@@ -347,14 +356,14 @@
         function solicitarExclusao() {
             const mesAno = document.getElementById('mesAno').value;
             if(!mesAno) return;
-            document.getElementById('confirm-msg').innerText = `Excluir toda a escala de ${mesAno}?`;
+            document.getElementById('confirm-msg').innerText = `Isto irá apagar permanentemente a escala de ${mesAno}. Deseja continuar?`;
             document.getElementById('custom-confirm').style.display = 'flex';
             document.getElementById('btn-confirm-yes').onclick = async () => {
                 document.getElementById('custom-confirm').style.display = 'none';
                 try {
                     const response = await fetch(`/api/escalas/${mesAno}`, { method: 'DELETE' });
                     if (response.ok) {
-                        mostrarToast("Escala excluída.", "success");
+                        mostrarToast("Escala excluída do sistema.", "success");
                         document.getElementById('corpo-tabela').innerHTML = ''; document.getElementById('feriados-lista').innerHTML = ''; document.getElementById('aniversarios-lista').innerHTML = ''; document.getElementById('obs-geral').value = '';
                         document.getElementById('btn-imprimir').style.display = 'none'; document.getElementById('btn-excluir-admin').style.display = 'none';
                     }
