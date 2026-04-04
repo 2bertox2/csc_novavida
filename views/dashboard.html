@@ -131,7 +131,7 @@
                 if (permission === 'granted') {
                     mostrarToast("Registrando... Aguarde.", "warning");
                     const registration = await navigator.serviceWorker.register('/public/firebase-messaging-sw.js');
-                    const token = await messaging.getToken({ vapidKey: "COLE_AQUI_A_SUA_CHAVE_VAPID_GERADA_NO_FIREBASE", serviceWorkerRegistration: registration });
+                    const token = await messaging.getToken({ vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc", serviceWorkerRegistration: registration });
                     
                     if (token) {
                         await fetch('/api/push-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user, token: token }) });
