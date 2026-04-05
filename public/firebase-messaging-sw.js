@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
-// A configuração precisa estar completa também no arquivo de segundo plano
+// A configuração precisa estar completa
 firebase.initializeApp({
   apiKey: "AIzaSyC63gBQ7JdRTnNCpSpir1brYH754fcKq9M",
   authDomain: "csc-live-bh.firebaseapp.com",
@@ -13,15 +13,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// O que fazer quando chegar notificação e o app estiver no bolso/segundo plano
+// Deixamos este bloco vazio propositalmente.
+// Como o servidor envia um payload de "notification", o próprio FCM (Firebase) 
+// se encarrega de exibir o push na tela automaticamente no iOS e Android.
+// Se colocarmos código de exibição aqui, a notificação sai duplicada!
 messaging.onBackgroundMessage(function(payload) {
-    console.log('[firebase-messaging-sw.js] Notificação recebida em background.', payload);
-    
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/public/img/REDONDOSIMBOLO 01.png'
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    console.log('[firebase-messaging-sw.js] Mensagem recebida. O FCM cuidará da exibição.', payload);
 });
