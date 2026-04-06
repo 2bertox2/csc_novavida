@@ -37,14 +37,20 @@
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
         th { background: #f8f9fa; text-transform: uppercase; font-weight: 800; color: #333;}
         
-        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #fff;}
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #fff; display: inline-block;}
         .bg-pendente { background-color: #dc3545; }
         .bg-andamento { background-color: #f39c12; }
         .bg-concluido { background-color: #28a745; }
 
-        .btn-sm { padding: 8px 12px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;}
+        .btn-sm { padding: 8px 12px; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s;}
+        .btn-sm:active { transform: scale(0.9); }
         .btn-edit { background-color: #007AFF; }
         .btn-delete { background-color: #dc3545; }
+        .btn-lock { background-color: #ff9f43; } /* Botão Laranja para Bloquear */
+        .btn-unlock { background-color: #28a745; } /* Botão Verde para Desbloquear */
+
+        .drive-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; background: #1a73e8; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 15px; font-size: 14px; transition: 0.3s; }
+        .drive-btn:hover { background: #1557b0; }
 
         #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
         .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
@@ -124,7 +130,16 @@
                 </div>
                 <div class="table-responsive">
                     <table id="tabela-usuarios">
-                        <thead><tr><th>ID</th><th>Usuário</th><th>Perfil</th><th>Equipe</th><th>Ações</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuário</th>
+                                <th>Perfil</th>
+                                <th>Equipe</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -159,11 +174,16 @@
                 <p>Prioridade: <span id="det-pri"></span></p>
                 <p style="margin-top: 15px; color:#fff; font-weight:bold;">Descrição do Pedido:</p>
                 <div class="desc-box" id="det-desc"></div>
+                
+                <div id="det-link-area" style="display: none;">
+                    <a href="#" id="det-link-btn" target="_blank" class="drive-btn"><i class="fab fa-google-drive"></i> Acessar Arquivos no Drive</a>
+                </div>
             </div>
 
             <div id="area-admin-update" style="display: none; margin-top: 25px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 20px;">
                 <h3 style="font-size: 14px; margin-bottom: 15px; color: #007AFF;"><i class="fas fa-tools"></i> Controles do Administrador</h3>
                 <input type="hidden" id="edit-chamado-id">
+                
                 <div class="form-group">
                     <label>Status Atual:</label>
                     <select id="edit-status">
@@ -172,14 +192,22 @@
                         <option value="Concluído">Concluído</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
                     <label>Progresso (%):</label>
                     <input type="number" id="edit-progresso" min="0" max="100">
                 </div>
+                
                 <div class="form-group">
                     <label>Técnico Responsável:</label>
                     <input type="text" id="edit-atribuido" placeholder="Nome do técnico (ou deixe vazio)">
                 </div>
+
+                <div class="form-group">
+                    <label><i class="fab fa-google-drive"></i> Link do Drive (Opcional):</label>
+                    <input type="url" id="edit-link" placeholder="Cole o link da pasta ou arquivo aqui">
+                </div>
+
                 <button class="btn-salvar-modal" onclick="salvarEdicaoChamado()"><i class="fas fa-save"></i> Salvar Alterações</button>
             </div>
         </div>
@@ -210,7 +238,7 @@
 
     <script>
         let usuarioAtual = null;
-        let listaChamadosGlobal = []; // Variável mágica que guarda as descrições em memória
+        let listaChamadosGlobal = [];
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -245,14 +273,12 @@
         async function carregarChamados() {
             try {
                 const res = await fetch('/api/chamados');
-                listaChamadosGlobal = await res.json(); // Salva a lista inteira na memória
+                listaChamadosGlobal = await res.json();
                 const tbody = document.querySelector('#tabela-chamados tbody');
                 tbody.innerHTML = '';
                 
                 listaChamadosGlobal.forEach(c => {
                     let corBadge = c.status === 'Concluído' ? 'bg-concluido' : (c.status === 'Em Andamento' ? 'bg-andamento' : 'bg-pendente');
-                    
-                    // Botão agora se chama "Abrir / Ver" para todos
                     let botoes = `<button class="btn-sm btn-edit" onclick="abrirDetalhesChamado(${c.id})"><i class="fas fa-external-link-alt"></i> Abrir</button>`;
 
                     tbody.innerHTML += `
@@ -275,24 +301,30 @@
             } catch (err) { console.log(err); }
         }
 
-        // FUNÇÃO QUE ABRE O CHAMADO E MOSTRA A DESCRIÇÃO
         function abrirDetalhesChamado(id) {
             const chamado = listaChamadosGlobal.find(c => c.id === id);
             if(!chamado) return;
 
-            // Preenche os textos de leitura
             document.getElementById('det-req').innerText = chamado.requerente;
             document.getElementById('det-cat').innerText = chamado.categoria;
             document.getElementById('det-pri').innerText = chamado.prioridade;
             document.getElementById('det-desc').innerText = chamado.descricao;
 
-            // Se for admin, libera os botões de edição também
+            // Controle de Exibição do Botão do Google Drive
+            if(chamado.link_drive) {
+                document.getElementById('det-link-area').style.display = 'block';
+                document.getElementById('det-link-btn').href = chamado.link_drive;
+            } else {
+                document.getElementById('det-link-area').style.display = 'none';
+            }
+
             if (usuarioAtual && usuarioAtual.perfil === 'ADMIN') {
                 document.getElementById('area-admin-update').style.display = 'block';
                 document.getElementById('edit-chamado-id').value = chamado.id;
                 document.getElementById('edit-status').value = chamado.status;
                 document.getElementById('edit-progresso').value = chamado.progresso;
                 document.getElementById('edit-atribuido').value = chamado.atribuido === '-' ? '' : chamado.atribuido;
+                document.getElementById('edit-link').value = chamado.link_drive || '';
             } else {
                 document.getElementById('area-admin-update').style.display = 'none';
             }
@@ -305,7 +337,8 @@
             const payload = {
                 status: document.getElementById('edit-status').value,
                 progresso: document.getElementById('edit-progresso').value,
-                atribuido: document.getElementById('edit-atribuido').value || '-'
+                atribuido: document.getElementById('edit-atribuido').value || '-',
+                link_drive: document.getElementById('edit-link').value || ''
             };
 
             const btn = document.querySelector('#area-admin-update .btn-salvar-modal');
@@ -322,17 +355,59 @@
             btn.innerHTML = `<i class="fas fa-save"></i> Salvar Alterações`;
         }
 
-        // Restante das rotinas (Usuarios, Aniversarios) inalteradas
+        // ================= GESTÃO DE USUÁRIOS E BLOQUEIO =================
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
                 const users = await res.json();
                 const tbody = document.querySelector('#tabela-usuarios tbody');
                 tbody.innerHTML = '';
+                
                 users.forEach(u => {
-                    tbody.innerHTML += `<tr><td>${u.id}</td><td><strong>${u.user}</strong></td><td>${u.perfil}</td><td>${u.equipe}</td><td><button class="btn-sm btn-delete" onclick="deletarRegistro('/api/usuarios/${u.id}', carregarUsuarios)"><i class="fas fa-trash"></i></button></td></tr>`;
+                    // Define visualmente se o usuário está ativo ou bloqueado
+                    let statusHtml = u.status === 'BLOQUEADO' 
+                        ? '<span class="badge" style="background:#dc3545">BLOQUEADO</span>' 
+                        : '<span class="badge" style="background:#28a745">ATIVO</span>';
+                        
+                    // Define o botão que vai aparecer (Bloquear ou Liberar)
+                    let btnBloqueio = u.status === 'BLOQUEADO'
+                        ? `<button class="btn-sm btn-unlock" onclick="alterarStatusUsuario(${u.id}, 'ATIVO')" title="Desbloquear Usuário"><i class="fas fa-unlock"></i> Liberar</button>`
+                        : `<button class="btn-sm btn-lock" onclick="alterarStatusUsuario(${u.id}, 'BLOQUEADO')" title="Bloquear Usuário"><i class="fas fa-lock"></i> Bloquear</button>`;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td><strong>${u.user}</strong></td>
+                            <td>${u.perfil}</td>
+                            <td>${u.equipe}</td>
+                            <td>${statusHtml}</td>
+                            <td>
+                                ${btnBloqueio}
+                                <button class="btn-sm btn-delete" onclick="deletarRegistro('/api/usuarios/${u.id}', carregarUsuarios)" title="Excluir Definitivamente"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
                 });
             } catch (err) {}
+        }
+
+        async function alterarStatusUsuario(id, novoStatus) {
+            try {
+                const res = await fetch(`/api/usuarios/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                
+                if(res.ok) {
+                    mostrarToast(`Acesso do usuário foi ${novoStatus === 'ATIVO' ? 'Liberado' : 'Bloqueado'}!`, "success");
+                    carregarUsuarios(); // Recarrega a tabela imediatamente
+                } else {
+                    mostrarToast("Erro ao processar a ação.", "error");
+                }
+            } catch (err) {
+                mostrarToast("Falha de conexão.", "error");
+            }
         }
 
         function abrirModalUsuario() {
