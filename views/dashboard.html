@@ -93,7 +93,9 @@
             <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> 
             <span>CSC Live</span>
         </div>
-        <div class="header-actions">
+            <div class="header-actions">
+            <button onclick="resetarNotificacoes()" class="icon-btn" title="Corrigir Notificações" style="color: #AF52DE;"><i class="fas fa-tools"></i></button>
+            
             <button onclick="solicitarPermissaoNotificacao()" id="btn-sino" class="icon-btn bell" title="Ativar Notificações"><i class="fas fa-bell"></i></button>
             <button onclick="forcarAtualizacao()" class="icon-btn refresh" title="Atualizar App"><i class="fas fa-sync-alt"></i></button>
             <button onclick="fazerLogout()" class="icon-btn logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
@@ -185,6 +187,39 @@
         function forcarAtualizacao() {
             mostrarToast("Limpando cache e buscando nova versão...", "warning");
             setTimeout(() => { window.location.href = window.location.pathname + '?refresh=' + new Date().getTime(); }, 1500);
+        }
+
+        async function resetarNotificacoes() {
+            if (!confirm("Isso fará uma limpeza profunda no sistema de notificações do seu celular. Deseja continuar?")) return;
+            
+            mostrarToast("Matando processos zumbis...", "warning");
+            
+            try {
+                // 1. Desregistra todos os Service Workers antigos (O "assassino" de zumbis)
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log("Service Worker antigo removido.");
+                    }
+                }
+
+                // 2. Apaga o Token de permissão salvo localmente (se houver)
+                if (firebase.messaging.isSupported()) {
+                    await messaging.deleteToken();
+                }
+
+                mostrarToast("Limpeza concluída! Recarregando...", "success");
+                
+                // 3. Recarrega a página forçando ignorar o cache antigo
+                setTimeout(() => {
+                    window.location.href = window.location.pathname + '?reset=' + new Date().getTime();
+                }, 2000);
+
+            } catch (error) {
+                console.error("Erro no reset: ", error);
+                mostrarToast("Erro ao limpar: " + error.message, "error");
+            }
         }
 
         window.onload = async () => {
