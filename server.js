@@ -23,7 +23,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
 }
 
 // Configuração do PostgreSQL em Nuvem
-const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_jpUhIyC2Bi7O@ep-red-truth-acfzcveg-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const connectionString = process.env.DATABASE_URL || 'COLE_AQUI_A_URL_DO_SEU_BANCO_POSTGRESQL';
 
 const pool = new Pool({
     connectionString: connectionString,
@@ -51,7 +51,6 @@ async function setupDatabase() {
                 requerente TEXT,
                 atribuido TEXT DEFAULT '-',
                 descricao TEXT,
-                link_drive TEXT DEFAULT '',
                 data_abertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 progresso INTEGER DEFAULT 0
             )
@@ -63,8 +62,7 @@ async function setupDatabase() {
                 nome_usuario TEXT UNIQUE,
                 senha TEXT,
                 perfil TEXT,
-                equipe TEXT,
-                status TEXT DEFAULT 'ATIVO'
+                equipe TEXT
             )
         `);
 
@@ -95,6 +93,11 @@ async function setupDatabase() {
             )
         `);
 
+        // 🔥 AUTO-REPARO DE BANCO DE DADOS (MIGRATION) 🔥
+        // Força a injeção das colunas novas nas tabelas velhas sem apagar dados
+        try { await pool.query("ALTER TABLE usuarios ADD COLUMN status TEXT DEFAULT 'ATIVO'"); console.log("✔️ Coluna 'status' injetada."); } catch(e){}
+        try { await pool.query("ALTER TABLE chamados ADD COLUMN link_drive TEXT DEFAULT ''"); console.log("✔️ Coluna 'link_drive' injetada."); } catch(e){}
+
         console.log("✅ Tabelas e Conexão com o Banco de Dados estabelecidas.");
     } catch (err) {
         console.error("❌ Erro ao configurar o banco:", err);
@@ -113,7 +116,6 @@ app.post('/api/push-token', async (req, res) => {
     } catch (err) { res.status(500).json({ sucesso: false }); }
 });
 
-// Atualizado para permitir envio apenas para perfis específicos (ex: só LÍDER e ADMIN)
 async function dispararNotificacaoPush(titulo, corpo, perfisAlvo = null) {
     if (!process.env.FIREBASE_PROJECT_ID) return;
     try {
@@ -125,8 +127,6 @@ async function dispararNotificacaoPush(titulo, corpo, perfisAlvo = null) {
         }
 
         const resTokens = await pool.query(query);
-        
-        // BLINDAGEM DE SERVIDOR: Remove tokens nulos ou curtos demais que fariam o Firebase rejeitar o pacote inteiro
         const tokens = resTokens.rows.map(t => t.token).filter(t => t && t.length > 20);
         
         if (tokens.length > 0) {
@@ -161,11 +161,9 @@ app.get('/api/stats', async (req, res) => {
                 const diaEv = parseInt(l.dia);
                 if (diaEv > diaAtual) return true;
                 
-                // Lógica Inteligente para o Domingo (ou dias com 2 eventos)
                 if (diaEv === diaAtual) {
                     if (l.evento.includes("MANHÃ") && horaAtual < 13) return true;
                     if ((l.evento.includes("NOITE") || l.evento.includes("TARDE")) && horaAtual >= 13) return true;
-                    // Se não tem 'Manhã' nem 'Noite' no nome, mostra o evento normal do dia
                     if (!l.evento.includes("MANHÃ") && !l.evento.includes("NOITE") && !l.evento.includes("TARDE")) return true; 
                 }
                 return false;
@@ -190,16 +188,18 @@ app.post('/api/login', async (req, res) => {
         if (result.rows.length > 0) {
             const userDb = result.rows[0];
             
-            // Trava de Bloqueio de Usuário
             if (userDb.status === 'BLOQUEADO') {
-                return res.status(403).json({ sucesso: false, mensagem: "Acesso bloqueado. Entre em contato com o Administrador para liberar seu acesso após a instalação do App." });
+                return res.status(403).json({ sucesso: false, mensagem: "Acesso bloqueado. Entre em contato com a Liderança." });
             }
             
             res.json({ sucesso: true, usuario: userDb });
         } else {
             res.status(401).json({ sucesso: false, mensagem: "Credenciais inválidas." });
         }
-    } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
+    } catch (err) { 
+        // 🚨 Correção Crítica do undefined: O frontend espera "mensagem", e não "erro"
+        res.status(500).json({ sucesso: false, mensagem: "Erro no servidor de dados: " + err.message }); 
+    }
 });
 
 app.get('/api/usuarios', async (req, res) => {
@@ -236,7 +236,6 @@ app.delete('/api/usuarios/:id', async (req, res) => {
 app.get('/api/chat/:tipo', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM chat_mensagens WHERE tipo = $1 ORDER BY data_envio DESC LIMIT 50', [req.params.tipo]);
-        // Reverte a ordem para as mensagens mais antigas ficarem no topo da leitura
         res.json(result.rows.reverse());
     } catch (err) { res.status(500).json({ erro: err.message }); }
 });
@@ -272,11 +271,10 @@ app.delete('/api/aniversarios/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// --- ROTAS DE ESCALAS (COM DISPARO INTELIGENTE) ---
+// --- ROTAS DE ESCALAS ---
 app.post('/api/escalas', async (req, res) => {
     const { mesAno, dados } = req.body;
     try {
-        // Verifica se a escala já existe para saber se é "Nova" ou "Editada"
         const existe = await pool.query('SELECT 1 FROM escalas WHERE mes_ano = $1', [mesAno]);
         
         await pool.query('INSERT INTO escalas (mes_ano, dados_json) VALUES ($1, $2) ON CONFLICT (mes_ano) DO UPDATE SET dados_json = EXCLUDED.dados_json', [mesAno, JSON.stringify(dados)]);
@@ -325,7 +323,6 @@ app.post('/api/chamados', async (req, res) => {
     try {
         await pool.query('INSERT INTO chamados (titulo, categoria, prioridade, requerente, descricao, progresso, link_drive) VALUES ($1, $2, $3, $4, $5, $6, $7)', [titulo, categoria, prioridade, requerente, descricao, progressoFinal, linkFinal]);
         
-        // Notifica APENAS Admins e Líderes sobre a abertura de um chamado novo
         await dispararNotificacaoPush("🚨 Novo Chamado Aberto", `${requerente} solicitou assistência na categoria: ${categoria}.`, ['ADMIN', 'LIDER']);
         
         res.status(201).json({ sucesso: true });
