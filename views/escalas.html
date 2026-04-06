@@ -18,7 +18,7 @@
 
         .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
 
-        /* PAINEL ADMIN OTIMIZADO (COM TEXTOS) */
+        /* PAINEL ADMIN OTIMIZADO */
         .admin-panel { background: #16213e; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); display: none; }
         .panel-heading { font-size: 13px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
         
@@ -51,6 +51,9 @@
         
         select.select-equipe { width: 100%; padding: 8px; background: #fff; color: #000; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; font-size: 13px; outline: none;}
         textarea { width: 100%; margin-top: 15px; padding: 12px; background: #f9f9f9; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; resize: vertical;}
+
+        .btn-del-row { background: transparent; color: #dc3545; border: none; font-size: 20px; cursor: pointer; transition: 0.3s; }
+        .btn-del-row:active { transform: scale(0.8); }
 
         /* CORES DAS EQUIPES */
         .bg-A { background-color: #FF3B30 !important; color: white; } 
@@ -94,6 +97,7 @@
             .table-responsive { overflow-x: visible; }
             table { width: 100%; font-size: 10px !important; margin-top: 5px; min-width: auto;}
             th, td { padding: 4px !important; border: 1px solid #000; }
+            .col-acao, #th-acao { display: none !important; } /* Esconde o botão de excluir na impressão */
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 10px; font-weight: bold;}
             textarea { border: none; outline: none; resize: none; overflow: hidden; font-size: 11px; margin-top: 5px; padding: 0;}
             #feriados-lista, #aniversarios-lista { font-size: 10px; margin-top: 5px; }
@@ -163,6 +167,7 @@
                             <th>DIA</th>
                             <th>RESPONSÁVEL / EQUIPE</th>
                             <th>MEMBROS ESCALADOS</th>
+                            <th id="th-acao" class="col-acao" style="display: none;">AÇÃO</th>
                         </tr>
                     </thead>
                     <tbody id="corpo-tabela"></tbody>
@@ -179,10 +184,11 @@
     </div>
 
     <script>
-        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI"] };
+        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI", "JOSÉ", "VICTOR"] };
         const feriados2026 = { "0-1": "Confraternização Universal", "1-17": "Carnaval", "3-3": "Sexta-feira Santa", "3-5": "Páscoa", "3-21": "Tiradentes", "4-1": "Dia do Trabalho", "5-4": "Corpus Christi", "8-7": "Independência", "9-12": "Nossa Sra Aparecida", "10-2": "Finados", "10-15": "Proclamação da República", "11-25": "Natal" };
 
         let usuarioAtual = null;
+        let isEdicao = false; // Controle para saber qual mensagem exibir ao salvar
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -229,6 +235,10 @@
         async function gerarTabelaBase() {
             const val = document.getElementById('mesAno').value;
             if(!val) return mostrarToast("Selecione o mês.", "warning");
+            
+            isEdicao = false; // Define como uma escala Nova
+            document.getElementById('th-acao').style.display = 'table-cell'; // Mostra a coluna de Excluir
+            
             const [ano, mes] = val.split('-').map(Number);
             document.getElementById('titulo-mes').innerText = `${new Date(ano, mes-1).toLocaleString('pt-br', {month: 'long'}).toUpperCase()} / ${ano}`;
             const tbody = document.getElementById('corpo-tabela'); tbody.innerHTML = ''; document.getElementById('obs-geral').value = '';
@@ -246,8 +256,21 @@
 
         function criarLinhaTr(evento, dia) {
             const tr = document.createElement('tr');
-            let opts = '<option value="">---</option>'; for(let e in equipesDB) opts += `<option value="${e}">EQUIPE ${e}</option>`; opts += `<option value="MISTA">ESCALA MISTA</option>`;
-            tr.innerHTML = `<td>${evento}</td><td>${dia}</td><td><select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${opts}</select></td><td class="membros-td">-</td>`;
+            let opts = '<option value="">---</option>'; 
+            
+            // Agora o dropdown mostra: EQUIPE A (CARLOS)
+            for(let e in equipesDB) {
+                opts += `<option value="${e}">EQUIPE ${e} (${equipesDB[e][0]})</option>`;
+            }
+            opts += `<option value="MISTA">ESCALA MISTA</option>`;
+            
+            tr.innerHTML = `
+                <td>${evento}</td>
+                <td>${dia}</td>
+                <td><select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${opts}</select></td>
+                <td class="membros-td">-</td>
+                <td class="col-acao"><button class="btn-del-row" onclick="this.closest('tr').remove()" title="Remover este dia"><i class="fas fa-times-circle"></i></button></td>
+            `;
             document.getElementById('corpo-tabela').appendChild(tr);
         }
 
@@ -280,6 +303,9 @@
                 const res = await fetch(`/api/escalas/${mesAno}`);
                 const result = await res.json();
                 if (result.sucesso) {
+                    isEdicao = true; // Define como uma escala Sendo Editada
+                    document.getElementById('th-acao').style.display = 'table-cell'; // Mostra a coluna de Excluir
+                    
                     const dados = result.dados;
                     document.getElementById('titulo-mes').innerText = dados.titulo;
                     document.getElementById('obs-geral').value = dados.obs || "";
@@ -288,9 +314,19 @@
                         const tr = document.createElement('tr');
                         tr.className = linha.equipe ? `bg-${linha.equipe}` : '';
                         let opts = '<option value="">---</option>';
-                        for(let e in equipesDB) opts += `<option value="${e}" ${linha.equipe === e ? 'selected' : ''}>EQUIPE ${e}</option>`;
+                        
+                        for(let e in equipesDB) {
+                            opts += `<option value="${e}" ${linha.equipe === e ? 'selected' : ''}>EQUIPE ${e} (${equipesDB[e][0]})</option>`;
+                        }
                         opts += `<option value="MISTA" ${linha.equipe === 'MISTA' ? 'selected' : ''}>ESCALA MISTA</option>`;
-                        tr.innerHTML = `<td>${linha.evento}</td><td>${linha.dia}</td><td><select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${opts}</select></td><td class="membros-td">${linha.membros}</td>`;
+                        
+                        tr.innerHTML = `
+                            <td>${linha.evento}</td>
+                            <td>${linha.dia}</td>
+                            <td><select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${opts}</select></td>
+                            <td class="membros-td">${linha.membros}</td>
+                            <td class="col-acao"><button class="btn-del-row" onclick="this.closest('tr').remove()" title="Remover este dia"><i class="fas fa-times-circle"></i></button></td>
+                        `;
                         tbody.appendChild(tr);
                         if (linha.equipe === 'MISTA') {
                             tr.querySelector('.select-equipe').style.display = 'none';
@@ -300,14 +336,21 @@
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
                     document.getElementById('btn-excluir-admin').style.display = 'block';
-                    mostrarToast("Escala carregada.", "success");
-                } else mostrarToast("Nenhuma escala salva.", "warning");
-            } catch (err) { mostrarToast("Erro no servidor.", "error"); }
+                    mostrarToast("Escala carregada com sucesso para edição.", "success");
+                } else mostrarToast("Nenhuma escala salva para este mês.", "warning");
+            } catch (err) { mostrarToast("Erro no servidor ao carregar.", "error"); }
         }
 
         function destravarMista(btn) {
             const tr = btn.closest('tr');
-            tr.cells[2].innerHTML = `<select class="select-equipe" onchange="tratarSelecaoEquipe(this)"><option value="">---</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="MISTA" selected>ESCALA MISTA</option></select>`;
+            
+            let optsHtml = `<option value="">---</option>`;
+            for(let e in equipesDB) {
+                optsHtml += `<option value="${e}">EQUIPE ${e} (${equipesDB[e][0]})</option>`;
+            }
+            optsHtml += `<option value="MISTA" selected>ESCALA MISTA</option>`;
+            
+            tr.cells[2].innerHTML = `<select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${optsHtml}</select>`;
             tratarSelecaoEquipe(tr.querySelector('.select-equipe'));
         }
 
@@ -354,17 +397,21 @@
             try {
                 const response = await fetch('/api/escalas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesAno, dados: pacote }) });
                 if (response.ok) { 
-                    if(!isSilent) mostrarToast("Escala salva e equipe notificada!", "success"); 
+                    if(!isSilent) {
+                        const msgFinal = isEdicao ? "Escala atualizada e equipe notificada!" : "Nova escala salva e equipe notificada!";
+                        mostrarToast(msgFinal, "success"); 
+                    }
                     document.getElementById('btn-excluir-admin').style.display = 'block'; 
+                    isEdicao = true; // Após salvar, o documento atual passa a ser uma edição
                     return true;
                 }
-            } catch (err) { mostrarToast("Erro ao salvar.", "error"); return false; }
+            } catch (err) { mostrarToast("Erro ao salvar no banco.", "error"); return false; }
         }
 
         async function salvarEImprimir() {
             const sucesso = await salvarEscalaNoBanco(true);
             if (sucesso) {
-                mostrarToast("Tudo salvo! Abrindo impressão...", "success");
+                mostrarToast("Tudo salvo! Abrindo área de impressão...", "success");
                 setTimeout(() => { window.print(); }, 800);
             }
         }
@@ -379,9 +426,10 @@
                 try {
                     const response = await fetch(`/api/escalas/${mesAno}`, { method: 'DELETE' });
                     if (response.ok) {
-                        mostrarToast("Escala excluída do sistema.", "success");
+                        mostrarToast("Escala excluída do sistema com sucesso.", "success");
                         document.getElementById('corpo-tabela').innerHTML = ''; document.getElementById('feriados-lista').innerHTML = ''; document.getElementById('aniversarios-lista').innerHTML = ''; document.getElementById('obs-geral').value = '';
                         document.getElementById('btn-imprimir').style.display = 'none'; document.getElementById('btn-excluir-admin').style.display = 'none';
+                        document.getElementById('th-acao').style.display = 'none';
                     }
                 } catch (err) {}
             };
@@ -395,6 +443,8 @@
                 const response = await fetch(`/api/escalas/${mesAno}`);
                 const result = await response.json();
                 if (result.sucesso) {
+                    document.getElementById('th-acao').style.display = 'none'; // Esconde a coluna de Ação na visualização
+                    
                     const dados = result.dados;
                     document.getElementById('titulo-mes').innerText = dados.titulo;
                     document.getElementById('obs-geral').value = dados.obs || "";
@@ -402,12 +452,18 @@
                     dados.linhas.forEach(linha => {
                         const tr = document.createElement('tr');
                         tr.className = linha.equipe ? `bg-${linha.equipe}` : '';
-                        tr.innerHTML = `<td>${linha.evento}</td><td>${linha.dia}</td><td><strong>${linha.equipe === 'MISTA' ? 'ESCALA MISTA' : (linha.equipe ? 'EQUIPE ' + linha.equipe : '---')}</strong></td><td>${linha.membros}</td>`;
+                        tr.innerHTML = `
+                            <td>${linha.evento}</td>
+                            <td>${linha.dia}</td>
+                            <td><strong>${linha.equipe === 'MISTA' ? 'ESCALA MISTA' : (linha.equipe ? 'EQUIPE ' + linha.equipe : '---')}</strong></td>
+                            <td>${linha.membros}</td>
+                            <td class="col-acao" style="display: none;"></td>
+                        `;
                         tbody.appendChild(tr);
                     });
                     await preencherDatasEspeciais(mes);
                     document.getElementById('btn-imprimir').style.display = 'block';
-                } else mostrarToast("Nenhuma escala encontrada para este mês.", "warning");
+                } else mostrarToast("Nenhuma escala encontrada para este mês no momento.", "warning");
             } catch (err) {}
         }
     </script>
