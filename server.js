@@ -95,6 +95,7 @@ setupDatabase();
 app.post('/api/push-token', async (req, res) => {
     const { usuario, token } = req.body;
     try {
+        if (!token || token.length < 20) return res.status(400).json({ sucesso: false, erro: "Token inválido" });
         await pool.query('INSERT INTO push_tokens (usuario, token) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING', [usuario, token]);
         res.json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false }); }
@@ -104,7 +105,9 @@ async function dispararNotificacaoPush(titulo, corpo) {
     if (!process.env.FIREBASE_PROJECT_ID) return;
     try {
         const resTokens = await pool.query('SELECT token FROM push_tokens');
-        const tokens = resTokens.rows.map(t => t.token);
+        
+        // BLINDAGEM DE SERVIDOR: Remove tokens nulos ou curtos demais que fariam o Firebase rejeitar o pacote inteiro
+        const tokens = resTokens.rows.map(t => t.token).filter(t => t && t.length > 20);
         
         if (tokens.length > 0) {
             const mensagem = {
@@ -114,7 +117,7 @@ async function dispararNotificacaoPush(titulo, corpo) {
             await admin.messaging().sendEachForMulticast(mensagem);
             console.log(`Push enviado: ${titulo}`);
         }
-    } catch (error) { console.error("Erro no push:", error); }
+    } catch (error) { console.error("Erro no push em lote:", error); }
 }
 
 // --- ROTAS DE INDICADORES (DASHBOARD) ---
@@ -204,7 +207,6 @@ app.post('/api/escalas', async (req, res) => {
     try {
         await pool.query('INSERT INTO escalas (mes_ano, dados_json) VALUES ($1, $2) ON CONFLICT (mes_ano) DO UPDATE SET dados_json = EXCLUDED.dados_json', [mesAno, JSON.stringify(dados)]);
         
-        // NOTIFICAÇÃO IMEDIATA ASSIM QUE SALVAR
         const mesNome = new Date(mesAno + "-01").toLocaleString('pt-br', { month: 'long' });
         await dispararNotificacaoPush("📅 Escala Atualizada!", `A escala oficial de ${mesNome.toUpperCase()} foi publicada. Confira seus dias de serviço no app!`);
         
