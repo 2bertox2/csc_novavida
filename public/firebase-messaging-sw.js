@@ -1,7 +1,7 @@
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
-// A configuração precisa estar completa
+// A configuração precisa estar completa para o Service Worker conectar na nuvem
 firebase.initializeApp({
   apiKey: "AIzaSyC63gBQ7JdRTnNCpSpir1brYH754fcKq9M",
   authDomain: "csc-live-bh.firebaseapp.com",
@@ -13,10 +13,8 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Deixamos este bloco vazio propositalmente.
-// Como o servidor envia um payload de "notification", o próprio FCM (Firebase) 
-// se encarrega de exibir o push na tela automaticamente no iOS e Android.
-// Se colocarmos código de exibição aqui, a notificação sai duplicada!
-messaging.onBackgroundMessage(function(payload) {
-    console.log('[firebase-messaging-sw.js] Mensagem recebida. O FCM cuidará da exibição.', payload);
-});
+// IMPORTANTE: 
+// Removemos completamente o "onBackgroundMessage" daqui!
+// Se você não interceptar a mensagem, o sistema nativo do Firebase (FCM)
+// assume o controle absoluto e garante que a notificação apareça na tela
+// do iOS e do Android de forma limpa, sem duplicar e sem falhar.
