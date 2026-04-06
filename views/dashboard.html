@@ -69,6 +69,27 @@
         .m-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
         .m-info p { font-size: 13px; color: #a2a2bd; }
 
+        /* SISTEMA DE CHAT INTERNO */
+        .chat-container { background: #16213e; border-radius: 16px; padding: 15px; margin-top: 30px; display: flex; flex-direction: column; height: 450px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);}
+        .chat-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
+        .chat-tab { flex: 1; padding: 12px; border-radius: 10px; background: #1a1a2e; color: #a2a2bd; border: 1px solid rgba(255,255,255,0.05); font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.3s;}
+        .chat-tab.active { background: #e94560; color: #fff; border-color: #e94560;}
+        .chat-box { flex: 1; overflow-y: auto; padding: 15px 10px; display: flex; flex-direction: column; gap: 12px; background: #121220; border-radius: 10px; margin-bottom: 15px; }
+        
+        .msg { display: flex; flex-direction: column; max-width: 85%; }
+        .msg.me { align-self: flex-end; }
+        .msg.other { align-self: flex-start; }
+        .msg-author { font-size: 11px; font-weight: bold; color: #a2a2bd; margin-bottom: 4px; padding: 0 5px;}
+        .msg-content { padding: 10px 15px; border-radius: 14px; font-size: 14px; line-height: 1.4; word-wrap: break-word;}
+        .msg.me .msg-content { background: #007AFF; color: #fff; border-bottom-right-radius: 4px; }
+        .msg.other .msg-content { background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px;}
+        
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input-area input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #fff; outline: none; font-size: 14px;}
+        .chat-input-area input:focus { border-color: #007AFF; }
+        .btn-send-chat { background: #007AFF; color: #fff; border: none; width: 48px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; transition: 0.3s;}
+        .btn-send-chat:active { transform: scale(0.9); }
+
         /* SISTEMA DE TOAST E MODAL */
         #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
         .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; font-size: 14px; font-weight: bold; pointer-events: all; width: 100%;}
@@ -93,9 +114,8 @@
             <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'"> 
             <span>CSC Live</span>
         </div>
-            <div class="header-actions">
+        <div class="header-actions">
             <button onclick="resetarNotificacoes()" class="icon-btn" title="Corrigir Notificações" style="color: #AF52DE;"><i class="fas fa-tools"></i></button>
-            
             <button onclick="solicitarPermissaoNotificacao()" id="btn-sino" class="icon-btn bell" title="Ativar Notificações"><i class="fas fa-bell"></i></button>
             <button onclick="forcarAtualizacao()" class="icon-btn refresh" title="Atualizar App"><i class="fas fa-sync-alt"></i></button>
             <button onclick="fazerLogout()" class="icon-btn logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
@@ -146,7 +166,21 @@
                     <p>Tickets e assistência</p>
                 </div>
             </a>
+        </div>
+
+        <h3 class="section-title" style="margin-top: 35px;">Comunicação Interna</h3>
+        <div class="chat-container">
+            <div class="chat-tabs">
+                <button class="chat-tab active" id="tab-geral" onclick="mudarAbaChat('GERAL')">💬 GERAL</button>
+                <button class="chat-tab" id="tab-lideres" style="display: none;" onclick="mudarAbaChat('LIDERES')">🛡️ LÍDERES</button>
             </div>
+            <div class="chat-box" id="caixa-mensagens">
+                </div>
+            <div class="chat-input-area">
+                <input type="text" id="input-mensagem" placeholder="Digite sua mensagem..." onkeypress="if(event.key === 'Enter') enviarMensagemChat()">
+                <button class="btn-send-chat" onclick="enviarMensagemChat()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
     </main>
 
     <div id="modal-megafone" class="modal">
@@ -167,6 +201,8 @@
 
     <script>
         let usuarioAtual = null;
+        let canalChatAtual = 'GERAL';
+        let chatIntervalo = null;
 
         function fazerLogout() {
             localStorage.removeItem('usuarioLogado');
@@ -191,11 +227,8 @@
 
         async function resetarNotificacoes() {
             if (!confirm("Isso fará uma limpeza profunda no sistema de notificações do seu celular. Deseja continuar?")) return;
-            
             mostrarToast("Matando processos zumbis...", "warning");
-            
             try {
-                // 1. Desregistra todos os Service Workers antigos (O "assassino" de zumbis)
                 if ('serviceWorker' in navigator) {
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     for (let registration of registrations) {
@@ -203,19 +236,13 @@
                         console.log("Service Worker antigo removido.");
                     }
                 }
-
-                // 2. Apaga o Token de permissão salvo localmente (se houver)
                 if (firebase.messaging.isSupported()) {
                     await messaging.deleteToken();
                 }
-
                 mostrarToast("Limpeza concluída! Recarregando...", "success");
-                
-                // 3. Recarrega a página forçando ignorar o cache antigo
                 setTimeout(() => {
                     window.location.href = window.location.pathname + '?reset=' + new Date().getTime();
                 }, 2000);
-
             } catch (error) {
                 console.error("Erro no reset: ", error);
                 mostrarToast("Erro ao limpar: " + error.message, "error");
@@ -228,23 +255,18 @@
             usuarioAtual = JSON.parse(userStore);
 
             // Restaura a exibição do nome do usuário logado
-            let nomeFormatado = usuarioAtual.user.split('.')[0]; // Pega o primeiro nome
+            let nomeFormatado = usuarioAtual.user.split('.')[0]; 
             nomeFormatado = nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1);
             document.getElementById('nome-usuario-tela').innerText = `Olá, ${nomeFormatado}`;
             document.getElementById('perfil-badge').innerText = usuarioAtual.perfil;
 
             if (Notification.permission === 'granted') document.getElementById('btn-sino').style.display = 'none';
 
-            // Carrega Estatísticas
-            try {
-                const res = await fetch('/api/stats');
-                const stats = await res.json();
-                document.getElementById('stat-pendentes').innerText = stats.pendentes;
-                document.getElementById('stat-membros').innerText = stats.membros;
-                document.getElementById('stat-proximo').innerText = stats.proximoEvento;
-            } catch (e) { console.log("Erro ao carregar estatísticas."); }
+            // Verifica se é Admin ou Líder para exibir aba secreta de chat e megafone
+            if (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'LIDER') {
+                document.getElementById('tab-lideres').style.display = 'block';
+            }
 
-            // Injeta o Megafone com o novo visual se for ADMIN
             if (usuarioAtual.perfil === 'ADMIN') {
                 const megafone = document.createElement('a');
                 megafone.href = "#"; 
@@ -259,8 +281,80 @@
                 `;
                 document.getElementById('grid-modulos').appendChild(megafone);
             }
+
+            // Carrega Estatísticas e Inicia o Chat
+            carregarEstatisticas();
+            carregarMensagensChat();
+            chatIntervalo = setInterval(carregarMensagensChat, 3000); // Atualiza o chat a cada 3 segundos
         };
 
+        async function carregarEstatisticas() {
+            try {
+                const res = await fetch('/api/stats');
+                const stats = await res.json();
+                document.getElementById('stat-pendentes').innerText = stats.pendentes;
+                document.getElementById('stat-membros').innerText = stats.membros;
+                document.getElementById('stat-proximo').innerText = stats.proximoEvento;
+            } catch (e) { console.log("Erro ao carregar estatísticas."); }
+        }
+
+        // ================= SISTEMA DE CHAT =================
+        function mudarAbaChat(tipo) {
+            canalChatAtual = tipo;
+            document.querySelectorAll('.chat-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tipo === 'GERAL' ? 'tab-geral' : 'tab-lideres').classList.add('active');
+            carregarMensagensChat(); // Atualiza na hora que troca a aba
+        }
+
+        async function carregarMensagensChat() {
+            try {
+                const res = await fetch(`/api/chat/${canalChatAtual}`);
+                const mensagens = await res.json();
+                const caixa = document.getElementById('caixa-mensagens');
+                
+                // Salva a posição do scroll para ver se o usuário estava lendo o passado
+                const estavaNoFinal = caixa.scrollHeight - caixa.clientHeight <= caixa.scrollTop + 20;
+
+                caixa.innerHTML = mensagens.map(m => {
+                    const isMinha = m.usuario === usuarioAtual.user;
+                    return `
+                        <div class="msg ${isMinha ? 'me' : 'other'}">
+                            ${!isMinha ? `<div class="msg-author">${m.usuario}</div>` : ''}
+                            <div class="msg-content">${m.mensagem}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Rola para o final automaticamente se estava acompanhando as novas mensagens
+                if (estavaNoFinal) caixa.scrollTop = caixa.scrollHeight;
+                
+            } catch (err) { console.error("Erro ao atualizar chat", err); }
+        }
+
+        async function enviarMensagemChat() {
+            const input = document.getElementById('input-mensagem');
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            input.value = ''; // Limpa o campo na hora
+            
+            try {
+                await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioAtual.user,
+                        mensagem: texto,
+                        tipo: canalChatAtual
+                    })
+                });
+                carregarMensagensChat(); // Força a atualização imediatamente
+            } catch (err) {
+                mostrarToast("Erro ao enviar mensagem.", "error");
+            }
+        }
+
+        // ================= FIREBASE E NOTIFICAÇÕES =================
         const firebaseConfig = { apiKey: "AIzaSyC63gBQ7JdRTnNCpSpir1brYH754fcKq9M", authDomain: "csc-live-bh.firebaseapp.com", projectId: "csc-live-bh", storageBucket: "csc-live-bh.firebasestorage.app", messagingSenderId: "345272283586", appId: "1:345272283586:web:648c1fb52622792406665b" };
         firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
@@ -283,8 +377,6 @@
                 }
             } catch (error) { mostrarToast("Falha técnica: " + error.message, "error"); }
         }
-
-        messaging.onMessage((payload) => { mostrarToast(`🔔 ${payload.notification.title}: ${payload.notification.body}`, 'success'); });
 
         async function dispararAvisoManual() {
             const titulo = document.getElementById('push-titulo').value;
