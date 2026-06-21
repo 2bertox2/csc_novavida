@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Inicialização de Segurança do Firebase lendo as chaves do Render
+// Inicialização de Segurança do Firebase
 if (process.env.FIREBASE_PROJECT_ID) {
     admin.initializeApp({
         credential: admin.credential.cert({
@@ -19,7 +19,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
             privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
         })
     });
-    console.log("🔥 Firebase de Notificações inicializado com sucesso.");
+    console.log("🔥 Firebase inicializado.");
 }
 
 // Configuração do PostgreSQL em Nuvem
@@ -95,6 +95,20 @@ async function setupDatabase() {
             )
         `);
 
+        // 🔥 NOVA TABELA PARA A CENTRAL DE NOTIFICAÇÕES INTERNA 🔥
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS notificacoes (
+                id SERIAL PRIMARY KEY,
+                titulo TEXT,
+                mensagem TEXT,
+                icone TEXT DEFAULT 'fas fa-bell',
+                data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        try { await pool.query("ALTER TABLE usuarios ADD COLUMN status TEXT DEFAULT 'ATIVO'"); } catch(e){}
+        try { await pool.query("ALTER TABLE chamados ADD COLUMN link_drive TEXT DEFAULT ''"); } catch(e){}
+
         console.log("✅ Tabelas e Conexão com o Banco de Dados estabelecidas.");
     } catch (err) {
         console.error("❌ Erro ao configurar o banco:", err);
@@ -103,38 +117,49 @@ async function setupDatabase() {
 
 setupDatabase();
 
-// --- SISTEMA DE NOTIFICAÇÕES PUSH ---
+// --- CENTRAL DE NOTIFICAÇÕES INTERNA ---
+async function registrarNotificacaoApp(titulo, mensagem, icone = 'fas fa-bell') {
+    try {
+        await pool.query('INSERT INTO notificacoes (titulo, mensagem, icone) VALUES ($1, $2, $3)', [titulo, mensagem, icone]);
+    } catch (error) { console.error("Erro ao salvar notificação interna:", error); }
+}
+
+app.get('/api/notificacoes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM notificacoes ORDER BY id DESC LIMIT 40');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ erro: err.message }); }
+});
+
+// Mantemos o Push Externo como apoio, mas o App Interno é o principal agora
 app.post('/api/push-token', async (req, res) => {
     const { usuario, token } = req.body;
     try {
-        if (!token || token.length < 20) return res.status(400).json({ sucesso: false, erro: "Token inválido" });
+        if (!token || token.length < 20) return res.status(400).json({ sucesso: false });
         await pool.query('INSERT INTO push_tokens (usuario, token) VALUES ($1, $2) ON CONFLICT (token) DO NOTHING', [usuario, token]);
         res.json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false }); }
 });
 
-async function dispararNotificacaoPush(titulo, corpo, perfisAlvo = null) {
+async function dispararNotificacaoPush(titulo, corpo, perfisAlvo = null, icone = 'fas fa-bell') {
+    // 1. Salva no App (100% de Garantia de Entrega)
+    await registrarNotificacaoApp(titulo, corpo, icone);
+
+    // 2. Tenta o Push da Web (Como "Bônus")
     if (!process.env.FIREBASE_PROJECT_ID) return;
     try {
         let query = 'SELECT token FROM push_tokens';
-        
         if (perfisAlvo && perfisAlvo.length > 0) {
             const perfisFormatados = perfisAlvo.map(p => `'${p}'`).join(',');
             query = `SELECT pt.token FROM push_tokens pt JOIN usuarios u ON pt.usuario = u.nome_usuario WHERE u.perfil IN (${perfisFormatados})`;
         }
-
         const resTokens = await pool.query(query);
         const tokens = resTokens.rows.map(t => t.token).filter(t => t && t.length > 20);
-        
         if (tokens.length > 0) {
-            const mensagem = {
-                notification: { title: titulo, body: corpo },
-                tokens: tokens
-            };
+            const mensagem = { notification: { title: titulo, body: corpo }, tokens: tokens };
             await admin.messaging().sendEachForMulticast(mensagem);
-            console.log(`Push enviado: ${titulo}`);
         }
-    } catch (error) { console.error("Erro no push em lote:", error); }
+    } catch (error) { console.log("Push ignorado."); }
 }
 
 // --- ROTAS DE INDICADORES (DASHBOARD) ---
@@ -153,11 +178,9 @@ app.get('/api/stats', async (req, res) => {
         let proximo = "Nenhum evento agendado";
         if (resEscala.rows.length > 0) {
             const dados = JSON.parse(resEscala.rows[0].dados_json);
-            
             const evento = dados.linhas.find(l => {
                 const diaEv = parseInt(l.dia);
                 if (diaEv > diaAtual) return true;
-                
                 if (diaEv === diaAtual) {
                     if (l.evento.includes("MANHÃ") && horaAtual < 13) return true;
                     if ((l.evento.includes("NOITE") || l.evento.includes("TARDE")) && horaAtual >= 13) return true;
@@ -165,50 +188,33 @@ app.get('/api/stats', async (req, res) => {
                 }
                 return false;
             });
-
             if (evento) proximo = `Dia ${evento.dia}: ${evento.evento} (${evento.equipe})`;
         }
-
-        res.json({
-            pendentes: resChamados.rows[0].count,
-            membros: resUsuarios.rows[0].count,
-            proximoEvento: proximo
-        });
+        res.json({ pendentes: resChamados.rows[0].count, membros: resUsuarios.rows[0].count, proximoEvento: proximo });
     } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// --- ROTAS DE LOGIN, VERIFICAÇÃO E USUÁRIOS ---
+// --- ROTAS DE LOGIN E SESSÃO ---
 app.post('/api/login', async (req, res) => {
     const { usuario, senha } = req.body;
     try {
         const result = await pool.query('SELECT id, nome_usuario as user, perfil, equipe, status FROM usuarios WHERE nome_usuario = $1 AND senha = $2', [usuario, senha]);
         if (result.rows.length > 0) {
-            const userDb = result.rows[0];
-            if (userDb.status === 'BLOQUEADO') {
-                return res.status(403).json({ sucesso: false, mensagem: "Acesso bloqueado. Entre em contato com a Liderança." });
-            }
-            res.json({ sucesso: true, usuario: userDb });
+            if (result.rows[0].status === 'BLOQUEADO') return res.status(403).json({ sucesso: false, mensagem: "Acesso bloqueado." });
+            res.json({ sucesso: true, usuario: result.rows[0] });
         } else {
             res.status(401).json({ sucesso: false, mensagem: "Credenciais inválidas." });
         }
-    } catch (err) { 
-        res.status(500).json({ sucesso: false, mensagem: "Erro no servidor de dados: " + err.message }); 
-    }
+    } catch (err) { res.status(500).json({ sucesso: false, mensagem: "Erro no servidor: " + err.message }); }
 });
 
-// 🔥 NOVA ROTA DE SEGURANÇA: VERIFICAÇÃO CONTÍNUA DE SESSÃO 🔥
 app.post('/api/verificar-sessao', async (req, res) => {
     const { usuario } = req.body;
     try {
         const result = await pool.query("SELECT status FROM usuarios WHERE nome_usuario = $1", [usuario]);
-        if (result.rows.length > 0 && result.rows[0].status === 'ATIVO') {
-            res.json({ ativo: true });
-        } else {
-            res.json({ ativo: false }); // Usuário não existe mais ou foi BLOQUEADO
-        }
-    } catch (e) { 
-        res.status(500).json({ ativo: false }); 
-    }
+        if (result.rows.length > 0 && result.rows[0].status === 'ATIVO') res.json({ ativo: true });
+        else res.json({ ativo: false });
+    } catch (e) { res.status(500).json({ ativo: false }); }
 });
 
 app.get('/api/usuarios', async (req, res) => {
@@ -280,22 +286,21 @@ app.delete('/api/aniversarios/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// --- ROTAS DE ESCALAS ---
+// --- ROTAS DE ESCALAS COM GATILHOS DE NOTIFICAÇÃO ---
 app.post('/api/escalas', async (req, res) => {
     const { mesAno, dados } = req.body;
     try {
         const existe = await pool.query('SELECT 1 FROM escalas WHERE mes_ano = $1', [mesAno]);
-        
         await pool.query('INSERT INTO escalas (mes_ano, dados_json) VALUES ($1, $2) ON CONFLICT (mes_ano) DO UPDATE SET dados_json = EXCLUDED.dados_json', [mesAno, JSON.stringify(dados)]);
         
         const mesNome = new Date(mesAno + "-01").toLocaleString('pt-br', { month: 'long' }).toUpperCase();
         
         const tituloPush = existe.rows.length > 0 ? "🔄 Escala Editada" : "📅 Nova Escala";
         const msgPush = existe.rows.length > 0 
-            ? `A escala oficial de ${mesNome} sofreu alterações. Confira o portal atualizado.` 
+            ? `A escala de ${mesNome} sofreu alterações. Confira o portal.` 
             : `A escala oficial de ${mesNome} foi publicada no sistema!`;
             
-        await dispararNotificacaoPush(tituloPush, msgPush);
+        await dispararNotificacaoPush(tituloPush, msgPush, null, "fas fa-calendar-alt");
         
         res.status(200).json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
@@ -312,6 +317,11 @@ app.get('/api/escalas/:mesAno', async (req, res) => {
 app.delete('/api/escalas/:mesAno', async (req, res) => {
     try {
         await pool.query('DELETE FROM escalas WHERE mes_ano = $1', [req.params.mesAno]);
+        
+        // Gatilho de Escala Excluída
+        const mesNome = new Date(req.params.mesAno + "-01").toLocaleString('pt-br', { month: 'long' }).toUpperCase();
+        await dispararNotificacaoPush("🗑️ Escala Cancelada", `A escala de ${mesNome} foi excluída pelo administrador.`, null, "fas fa-calendar-times");
+
         res.status(200).json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
@@ -326,14 +336,9 @@ app.get('/api/chamados', async (req, res) => {
 
 app.post('/api/chamados', async (req, res) => {
     const { titulo, categoria, prioridade, requerente, descricao, progresso, link_drive } = req.body;
-    const linkFinal = link_drive || '';
-    const progressoFinal = progresso || 0;
-    
     try {
-        await pool.query('INSERT INTO chamados (titulo, categoria, prioridade, requerente, descricao, progresso, link_drive) VALUES ($1, $2, $3, $4, $5, $6, $7)', [titulo, categoria, prioridade, requerente, descricao, progressoFinal, linkFinal]);
-        
-        await dispararNotificacaoPush("🚨 Novo Chamado Aberto", `${requerente} solicitou assistência na categoria: ${categoria}.`, ['ADMIN', 'LIDER']);
-        
+        await pool.query('INSERT INTO chamados (titulo, categoria, prioridade, requerente, descricao, progresso, link_drive) VALUES ($1, $2, $3, $4, $5, $6, $7)', [titulo, categoria, prioridade, requerente, descricao, progresso || 0, link_drive || '']);
+        await dispararNotificacaoPush("🚨 Novo Chamado Aberto", `${requerente} solicitou assistência em: ${categoria}.`, ['ADMIN', 'LIDER'], "fas fa-ticket-alt");
         res.status(201).json({ sucesso: true });
     } catch (err) { res.status(500).json({ sucesso: false, erro: err.message }); }
 });
@@ -349,7 +354,7 @@ app.put('/api/chamados/:id', async (req, res) => {
 
 app.post('/api/notificar', async (req, res) => {
     const { titulo, mensagem } = req.body;
-    await dispararNotificacaoPush(titulo, mensagem);
+    await dispararNotificacaoPush(titulo, mensagem, null, "fas fa-bullhorn");
     res.json({ sucesso: true });
 });
 
@@ -357,16 +362,14 @@ app.post('/api/notificar', async (req, res) => {
 cron.schedule('0 7 * * *', async () => {
     try {
         const hj = new Date();
-        const dia = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric" });
-        const mes = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", month: "numeric" });
-        const ano = hj.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: "numeric" });
-        const mesAno = `${ano}-${mes.toString().padStart(2, '0')}`;
-        const diaInt = parseInt(dia);
+        const diaInt = hj.getDate();
+        const mesInt = hj.getMonth() + 1;
+        const mesAno = `${hj.getFullYear()}-${mesInt.toString().padStart(2, '0')}`;
 
-        const resNiver = await pool.query('SELECT nome FROM aniversarios WHERE dia = $1 AND mes = $2', [diaInt, parseInt(mes)]);
+        const resNiver = await pool.query('SELECT nome FROM aniversarios WHERE dia = $1 AND mes = $2', [diaInt, mesInt]);
         if (resNiver.rows.length > 0) {
             for (let n of resNiver.rows) {
-                await dispararNotificacaoPush("🎉 Aniversário Hoje!", `Hoje é aniversário de ${n.nome}. Parabéns!`);
+                await dispararNotificacaoPush("🎉 Aniversário Hoje!", `Hoje é aniversário de ${n.nome}. Parabéns!`, null, "fas fa-birthday-cake");
             }
         }
 
@@ -375,7 +378,7 @@ cron.schedule('0 7 * * *', async () => {
             const dados = JSON.parse(resEscala.rows[0].dados_json);
             const eventoHoje = dados.linhas.find(l => parseInt(l.dia) === diaInt && l.membros !== "-");
             if (eventoHoje) {
-                await dispararNotificacaoPush("📅 É HOJE!", `Evento: ${eventoHoje.evento}. Equipe: ${eventoHoje.equipe}.`);
+                await dispararNotificacaoPush("📅 É HOJE!", `Evento: ${eventoHoje.evento}. Equipe Responsável: ${eventoHoje.equipe}.`, null, "fas fa-check-circle");
             }
         }
     } catch (error) { console.error(error); }
