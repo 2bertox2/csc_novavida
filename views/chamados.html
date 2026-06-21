@@ -46,8 +46,8 @@
         .btn-sm:active { transform: scale(0.9); }
         .btn-edit { background-color: #007AFF; }
         .btn-delete { background-color: #dc3545; }
-        .btn-lock { background-color: #ff9f43; } /* Botão Laranja para Bloquear */
-        .btn-unlock { background-color: #28a745; } /* Botão Verde para Desbloquear */
+        .btn-lock { background-color: #ff9f43; }
+        .btn-unlock { background-color: #28a745; }
 
         .drive-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 15px; background: #1a73e8; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 15px; font-size: 14px; transition: 0.3s; }
         .drive-btn:hover { background: #1557b0; }
@@ -60,7 +60,6 @@
         .modal-content { background-color: #16213e; padding: 25px; border-radius: 16px; width: 100%; max-width: 450px; position: relative; border: 1px solid rgba(255,255,255,0.1); color: #fff; max-height: 90vh; overflow-y: auto;}
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; font-weight: bold; color: #a2a2bd; cursor: pointer; }
         
-        /* CAIXA DE DETALHES DO CHAMADO */
         .info-box { background: #1a1a2e; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .info-box p { margin-bottom: 8px; font-size: 14px; color: #a2a2bd; }
         .info-box span { color: #fff; font-weight: bold; }
@@ -250,30 +249,28 @@
             setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
 
+            // AQUI ESTÁ O CÃO DE GUARDA BEM APLICADO
+            try {
+                const reqSessao = await fetch('/api/verificar-sessao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user }) });
+                const resSessao = await reqSessao.json();
+                if (!resSessao.ativo) {
+                    localStorage.clear(); 
+                    alert("Acesso Revogado pela Administração."); 
+                    window.location.href = '/'; 
+                    return;
+                }
+            } catch (e) { console.log("Permitindo acesso offline temporário."); }
+
+            // AGORA AS TELAS CARREGAM NORMALMENTE
             if (usuarioAtual.perfil === 'ADMIN') document.getElementById('admin-tabs').style.display = 'flex';
             
             carregarChamados();
             if(usuarioAtual.perfil === 'ADMIN'){ carregarUsuarios(); carregarAniversarios(); }
-
-            // O CÃO DE GUARDA: Verifica no banco se o usuário não foi bloqueado recentemente
-            try {
-                const reqSessao = await fetch('/api/verificar-sessao', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: usuarioAtual.user })
-                });
-                const resSessao = await reqSessao.json();
-                if (!resSessao.ativo) {
-                    localStorage.clear();
-                    alert("Seu acesso foi revogado pela administração.");
-                    window.location.href = '/';
-                    return;
-                }
-            } catch (e) { console.log("Verificação falhou, permitindo acesso offline."); }
         };
 
         function mudarAba(abaId, btn) {
@@ -325,7 +322,6 @@
             document.getElementById('det-pri').innerText = chamado.prioridade;
             document.getElementById('det-desc').innerText = chamado.descricao;
 
-            // Controle de Exibição do Botão do Google Drive
             if(chamado.link_drive) {
                 document.getElementById('det-link-area').style.display = 'block';
                 document.getElementById('det-link-btn').href = chamado.link_drive;
@@ -370,7 +366,6 @@
             btn.innerHTML = `<i class="fas fa-save"></i> Salvar Alterações`;
         }
 
-        // ================= GESTÃO DE USUÁRIOS E BLOQUEIO =================
         async function carregarUsuarios() {
             try {
                 const res = await fetch('/api/usuarios');
@@ -379,12 +374,10 @@
                 tbody.innerHTML = '';
                 
                 users.forEach(u => {
-                    // Define visualmente se o usuário está ativo ou bloqueado
                     let statusHtml = u.status === 'BLOQUEADO' 
                         ? '<span class="badge" style="background:#dc3545">BLOQUEADO</span>' 
                         : '<span class="badge" style="background:#28a745">ATIVO</span>';
                         
-                    // Define o botão que vai aparecer (Bloquear ou Liberar)
                     let btnBloqueio = u.status === 'BLOQUEADO'
                         ? `<button class="btn-sm btn-unlock" onclick="alterarStatusUsuario(${u.id}, 'ATIVO')" title="Desbloquear Usuário"><i class="fas fa-unlock"></i> Liberar</button>`
                         : `<button class="btn-sm btn-lock" onclick="alterarStatusUsuario(${u.id}, 'BLOQUEADO')" title="Bloquear Usuário"><i class="fas fa-lock"></i> Bloquear</button>`;
@@ -416,7 +409,7 @@
                 
                 if(res.ok) {
                     mostrarToast(`Acesso do usuário foi ${novoStatus === 'ATIVO' ? 'Liberado' : 'Bloqueado'}!`, "success");
-                    carregarUsuarios(); // Recarrega a tabela imediatamente
+                    carregarUsuarios(); 
                 } else {
                     mostrarToast("Erro ao processar a ação.", "error");
                 }
