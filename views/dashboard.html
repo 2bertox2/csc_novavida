@@ -3,63 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-
     <title>Dashboard - CSC Live</title>
-    
     <link rel="manifest" href="/public/manifest.json">
     <link rel="icon" href="/public/img/REDONDOSIMBOLO 01.png" type="image/png">
     <link rel="apple-touch-icon" href="/public/img/REDONDOSIMBOLO 01.png">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: #121220; color: #fff; min-height: 100vh; overflow-x: hidden; }
         
-        /* CABEÇALHO ESTILO APP NATIVO */
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; }
         .brand { display: flex; align-items: center; gap: 10px; }
         .brand img { height: 35px; }
         .brand span { font-size: 18px; font-weight: 800; color: #e94560; letter-spacing: 0.5px; }
         
         .header-actions { display: flex; gap: 12px; align-items: center; }
-        .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .icon-btn { position: relative; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; transition: 0.3s; }
         .icon-btn:active { transform: scale(0.9); }
         .icon-btn.refresh { color: #28a745; }
         .icon-btn.bell { color: #f39c12; }
         .icon-btn.logout { color: #dc3545; }
 
-        .main-content { padding: 25px 20px; max-width: 1200px; margin: 0 auto; width: 100%; transition: 0.3s; }
+        /* BOLINHA VERMELHA DE NOTIFICAÇÃO */
+        .badge-notif { position: absolute; top: -3px; right: -3px; background: #e94560; color: #fff; font-size: 10px; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #16213e; display: none;}
 
-        /* MENSAGEM DE BOAS VINDAS E USUÁRIO */
+        .main-content { padding: 25px 20px; max-width: 1200px; margin: 0 auto; width: 100%; transition: 0.3s; }
         .user-welcome { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
         .user-welcome h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 5px; }
         .user-welcome p { font-size: 13px; color: #a2a2bd; }
         .badge-perfil { background: rgba(233, 69, 96, 0.2); color: #e94560; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 1px; border: 1px solid rgba(233, 69, 96, 0.4); }
 
-        /* GRID DE INDICADORES (LADO A LADO NO MOBILE) */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         .stat-card { background: #16213e; padding: 20px; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02);}
         .stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #007AFF; border-radius: 4px 0 0 4px; }
         .stat-card.red::before { background: #e94560; }
         .stat-card.yellow::before { background: #f39c12; }
         .stat-card.full-width { grid-column: span 2; }
-        
         .stat-icon { position: absolute; right: 15px; top: 20px; font-size: 24px; color: rgba(255,255,255,0.05); }
         .stat-card h3 { font-size: 12px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px;}
         .stat-card .value { font-size: 26px; font-weight: 800; color: #fff; }
         .stat-card.full-width .value { font-size: 18px; }
 
-        /* MÓDULOS DE NAVEGAÇÃO */
         .section-title { font-size: 14px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; }
         .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        
         .module-card { background-color: #16213e; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 20px; text-decoration: none; color: #fff; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .module-card:hover, .module-card:active { background-color: #1a264a; transform: translateY(-3px); border-color: #e94560;}
         .m-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 22px; }
@@ -69,13 +59,11 @@
         .m-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
         .m-info p { font-size: 13px; color: #a2a2bd; }
 
-        /* SISTEMA DE CHAT INTERNO */
         .chat-container { background: #16213e; border-radius: 16px; padding: 15px; margin-top: 30px; display: flex; flex-direction: column; height: 450px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);}
         .chat-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
         .chat-tab { flex: 1; padding: 12px; border-radius: 10px; background: #1a1a2e; color: #a2a2bd; border: 1px solid rgba(255,255,255,0.05); font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.3s;}
         .chat-tab.active { background: #e94560; color: #fff; border-color: #e94560;}
         .chat-box { flex: 1; overflow-y: auto; padding: 15px 10px; display: flex; flex-direction: column; gap: 12px; background: #121220; border-radius: 10px; margin-bottom: 15px; }
-        
         .msg { display: flex; flex-direction: column; max-width: 85%; }
         .msg.me { align-self: flex-end; }
         .msg.other { align-self: flex-start; }
@@ -83,58 +71,56 @@
         .msg-content { padding: 10px 15px; border-radius: 14px; font-size: 14px; line-height: 1.4; word-wrap: break-word;}
         .msg.me .msg-content { background: #007AFF; color: #fff; border-bottom-right-radius: 4px; }
         .msg.other .msg-content { background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 4px;}
-        
         .chat-input-area { display: flex; gap: 10px; }
         .chat-input-area input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #1a1a2e; color: #fff; outline: none; font-size: 14px;}
         .chat-input-area input:focus { border-color: #007AFF; }
         .btn-send-chat { background: #007AFF; color: #fff; border: none; width: 48px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; transition: 0.3s;}
-        .btn-send-chat:active { transform: scale(0.9); }
-
-        /* TELA DE SUSPENSÃO (A ARMADILHA DO BOTÃO VERDE) */
-        #suspension-screen { 
-            display: none; 
-            width: 100%; 
-            min-height: 100vh; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px; 
-            background-color: #121220; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            z-index: 9999; 
-            animation: fadeIn 0.5s ease; 
-        }
+        
+        #suspension-screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background-color: #121220; position: fixed; top: 0; left: 0; z-index: 9999; animation: fadeIn 0.5s ease; }
         .suspension-card { background: #16213e; padding: 40px 30px; border-radius: 16px; text-align: center; max-width: 500px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05); }
-        .suspension-card .brand { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 30px; }
-        .suspension-card .brand img { height: 50px; }
-        .suspension-card .brand span { font-size: 24px; font-weight: 800; color: #e94560; letter-spacing: 1px; }
         .icon-warning { font-size: 50px; color: #f39c12; margin-bottom: 20px; }
-        .suspension-card h1 { font-size: 22px; color: #fff; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
         .text-box { font-size: 15px; color: #a2a2bd; line-height: 1.6; margin-bottom: 15px; text-align: justify; }
-        .text-box strong { color: #fff; }
-        .footer-note { font-size: 13px; color: #666; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;}
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* SISTEMA DE TOAST E MODAL */
+        /* PAINEL LATERAL DE NOTIFICAÇÕES (O SININHO) */
+        #painel-notificacoes { position: fixed; top: 0; right: -350px; width: 320px; height: 100vh; background: #16213e; box-shadow: -5px 0 25px rgba(0,0,0,0.5); z-index: 9000; transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; border-left: 1px solid rgba(255,255,255,0.05); }
+        #painel-notificacoes.aberto { right: 0; }
+        .notif-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .notif-header h3 { font-size: 16px; color: #fff; }
+        .notif-body { flex: 1; overflow-y: auto; padding: 10px; }
+        .notif-card { background: #1a1a2e; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid #f39c12; display: flex; gap: 15px; align-items: flex-start; }
+        .notif-card .icone { background: rgba(243, 156, 18, 0.1); color: #f39c12; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; flex-shrink: 0;}
+        .notif-card h4 { font-size: 14px; margin-bottom: 4px; color: #fff; }
+        .notif-card p { font-size: 12px; color: #a2a2bd; line-height: 1.4; }
+        .notif-card span.data { font-size: 10px; color: #666; margin-top: 8px; display: block; }
+        .notif-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 8999; display: none; backdrop-filter: blur(3px); }
+
         #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
         .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s ease forwards; font-size: 14px; font-weight: bold; pointer-events: all; width: 100%;}
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
         .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px);}
-        .modal-content { background-color: #16213e; padding: 30px 20px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .modal-content { background-color: #16213e; padding: 30px 20px; border-radius: 16px; width: 100%; max-width: 400px; position: relative; border: 1px solid rgba(255,255,255,0.1); }
         .close-btn { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; color: #a2a2bd; cursor: pointer; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #a2a2bd; }
         .form-group textarea, .form-group input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); outline: none; font-size: 15px; background: #1a1a2e; color: #fff;}
-        .form-group input:focus, .form-group textarea:focus { border-color: #f39c12; }
-        .btn-enviar-push { width: 100%; padding: 16px; background: #f39c12; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-enviar-push { width: 100%; padding: 16px; background: #f39c12; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; text-transform: uppercase;}
     </style>
 </head>
 <body>
     <div id="toast-container"></div>
+    <div class="notif-overlay" id="overlay" onclick="fecharNotificacoes()"></div>
+
+    <!-- PAINEL DESLIZANTE DE NOTIFICAÇÕES -->
+    <div id="painel-notificacoes">
+        <div class="notif-header">
+            <h3><i class="fas fa-bell"></i> Central de Alertas</h3>
+            <i class="fas fa-times" style="cursor:pointer; color:#a2a2bd; font-size:20px;" onclick="fecharNotificacoes()"></i>
+        </div>
+        <div class="notif-body" id="lista-notificacoes">
+            <div style="text-align: center; color: #666; margin-top: 50px;">Carregando alertas...</div>
+        </div>
+    </div>
 
     <header class="app-header">
         <div class="brand">
@@ -142,8 +128,15 @@
             <span>CSC Live</span>
         </div>
         <div class="header-actions">
+            <!-- A ARMADILHA VERDE MANTIDA -->
             <button onclick="forcarAtualizacao()" class="icon-btn refresh" title="Atualizar App"><i class="fas fa-sync-alt"></i></button>
-            <button onclick="solicitarPermissaoNotificacao()" id="btn-sino" class="icon-btn bell" title="Ativar Notificações"><i class="fas fa-bell"></i></button>
+            
+            <!-- O NOVO SININHO INTERNO -->
+            <button onclick="abrirNotificacoes()" id="btn-sino" class="icon-btn bell" title="Alertas">
+                <i class="fas fa-bell"></i>
+                <span class="badge-notif" id="badge-notif">!</span>
+            </button>
+            
             <button onclick="fazerLogout()" class="icon-btn logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
         </div>
     </header>
@@ -210,20 +203,11 @@
 
     <div id="suspension-screen">
         <div class="suspension-card">
-            <div class="brand">
-                <img src="/public/img/REDONDOSIMBOLO 01.png" alt="Logo" onerror="this.style.display='none'">
-                <span>CSC Live</span>
-            </div>
             <i class="fas fa-exclamation-triangle icon-warning"></i>
-            <h1>Aviso Importante</h1>
-            <div class="text-box">
-                Comunicamos a todos que o projeto da plataforma CSC Live encontra-se <strong>inativo e com os acessos suspensos até segunda ordem.</strong>
-            </div>
-            <div class="text-box">
-                Esta decisão foi tomada devido à baixa utilização da ferramenta por grande parte da equipe e pela não adesão aos protocolos operacionais, como a instalação do aplicativo e a ativação obrigatória das notificações nativas. Sem esse alinhamento, a comunicação em tempo real do sistema perde a sua eficácia.
-            </div>
-        
-            <div class="footer-note">Agradecemos a compreensão.</div>
+            <h1 style="color:#fff;">Aviso Importante</h1>
+            <div class="text-box">Comunicamos a todos que o projeto da plataforma CSC Live encontra-se <strong>inativo e com os acessos suspensos até segunda ordem.</strong></div>
+            <div class="text-box">Esta decisão foi tomada devido à baixa utilização da ferramenta por grande parte da equipe e pela não adesão aos protocolos operacionais de sincronização diária.</div>
+            <div class="text-box">Aproveitamos para pedir desculpas pelas recentes divergências apresentadas entre as escalas geradas aqui e as enviadas no grupo, visto que operavam em formatos diferentes.</div>
         </div>
     </div>
 
@@ -231,14 +215,8 @@
         <div class="modal-content">
             <span class="close-btn" onclick="document.getElementById('modal-megafone').style.display = 'none'">&times;</span>
             <h2 style="color: #f39c12; margin-bottom: 20px; font-size: 20px;"><i class="fas fa-bullhorn"></i> Enviar Aviso</h2>
-            <div class="form-group">
-                <label>Título do Push:</label>
-                <input type="text" id="push-titulo" placeholder="Ex: Reunião Urgente">
-            </div>
-            <div class="form-group">
-                <label>Mensagem:</label>
-                <textarea id="push-msg" rows="4" placeholder="Digite o recado aqui..."></textarea>
-            </div>
+            <div class="form-group"><label>Título do Push:</label><input type="text" id="push-titulo"></div>
+            <div class="form-group"><label>Mensagem:</label><textarea id="push-msg" rows="4"></textarea></div>
             <button class="btn-enviar-push" onclick="dispararAvisoManual()">Disparar Notificação</button>
         </div>
     </div>
@@ -247,30 +225,13 @@
         let usuarioAtual = null;
         let canalChatAtual = 'GERAL';
         let chatIntervalo = null;
+        let verificadorNotif = null;
 
-        function fazerLogout() {
-            localStorage.removeItem('usuarioLogado');
-            window.location.href = '/';
-        }
+        function fazerLogout() { localStorage.removeItem('usuarioLogado'); window.location.href = '/'; }
 
-        function mostrarToast(mensagem, tipo = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast`;
-            if(tipo === 'error') toast.style.borderLeftColor = '#dc3545';
-            if(tipo === 'warning') toast.style.borderLeftColor = '#f39c12';
-            toast.innerHTML = `<div>${mensagem}</div>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 4000);
-        }
-
-        // --- AQUI ACONTECE A MÁGICA DA SUSPENSÃO ---
         function forcarAtualizacao() {
-            // Esconde o painel inteiro
             document.querySelector('.app-header').style.display = 'none';
             document.querySelector('.main-content').style.display = 'none';
-            
-            // Joga a tela de suspensão na cara do usuário
             document.getElementById('suspension-screen').style.display = 'flex';
         }
 
@@ -279,53 +240,90 @@
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
 
+            // CÃO DE GUARDA: FIM DO LOGIN FANTASMA
+            try {
+                const reqSessao = await fetch('/api/verificar-sessao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user }) });
+                const resSessao = await reqSessao.json();
+                if (!resSessao.ativo) {
+                    localStorage.clear(); alert("Acesso Revogado pela Administração."); window.location.href = '/'; return;
+                }
+            } catch (e) { console.log("Permitindo acesso offline temporário."); }
+
             let nomeFormatado = usuarioAtual.user.split('.')[0]; 
             nomeFormatado = nomeFormatado.charAt(0).toUpperCase() + nomeFormatado.slice(1);
             document.getElementById('nome-usuario-tela').innerText = `Olá, ${nomeFormatado}`;
             document.getElementById('perfil-badge').innerText = usuarioAtual.perfil;
 
-            if (Notification.permission === 'granted') document.getElementById('btn-sino').style.display = 'none';
-
-            if (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'LIDER') {
-                document.getElementById('tab-lideres').style.display = 'block';
-            }
+            if (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'LIDER') document.getElementById('tab-lideres').style.display = 'block';
 
             if (usuarioAtual.perfil === 'ADMIN') {
-                const megafone = document.createElement('a');
-                megafone.href = "#"; 
-                megafone.className = "module-card";
+                const megafone = document.createElement('a'); megafone.href = "#"; megafone.className = "module-card";
                 megafone.onclick = (e) => { e.preventDefault(); document.getElementById('modal-megafone').style.display = 'flex'; };
-                megafone.innerHTML = `
-                    <div class="m-icon yellow"><i class="fas fa-bullhorn"></i></div>
-                    <div class="m-info">
-                        <h4>Aviso Geral</h4>
-                        <p>Disparar Push para equipe</p>
-                    </div>
-                `;
+                megafone.innerHTML = `<div class="m-icon yellow"><i class="fas fa-bullhorn"></i></div><div class="m-info"><h4>Aviso Geral</h4><p>Disparar Alerta</p></div>`;
                 document.getElementById('grid-modulos').appendChild(megafone);
             }
 
             carregarEstatisticas();
             carregarMensagensChat();
+            verificarNovasNotificacoes();
             chatIntervalo = setInterval(carregarMensagensChat, 3000);
-
-            // O CÃO DE GUARDA: Verifica no banco se o usuário não foi bloqueado recentemente
-            try {
-                const reqSessao = await fetch('/api/verificar-sessao', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: usuarioAtual.user })
-                });
-                const resSessao = await reqSessao.json();
-                if (!resSessao.ativo) {
-                    localStorage.clear();
-                    alert("Seu acesso foi revogado pela administração.");
-                    window.location.href = '/';
-                    return;
-                }
-            } catch (e) { console.log("Verificação falhou, permitindo acesso offline."); }
-            
+            verificadorNotif = setInterval(verificarNovasNotificacoes, 10000); // Checa alertas a cada 10s
         };
 
+        // --- LÓGICA DO SININHO ---
+        function abrirNotificacoes() {
+            document.getElementById('painel-notificacoes').classList.add('aberto');
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('badge-notif').style.display = 'none'; // Esconde a bolinha
+            
+            // Grava que o usuário já abriu o painel hoje
+            if (window.ultimoIdNotificacao) localStorage.setItem('notif_lida_' + usuarioAtual.user, window.ultimoIdNotificacao);
+        }
+
+        function fecharNotificacoes() {
+            document.getElementById('painel-notificacoes').classList.remove('aberto');
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        async function verificarNovasNotificacoes() {
+            try {
+                const res = await fetch('/api/notificacoes');
+                const alertas = await res.json();
+                const painel = document.getElementById('lista-notificacoes');
+                
+                if (alertas.length === 0) {
+                    painel.innerHTML = `<div style="text-align: center; color: #666; margin-top: 50px;">Nenhum alerta recente.</div>`;
+                    return;
+                }
+
+                // Salva o ID mais alto na memória da tela
+                window.ultimoIdNotificacao = alertas[0].id;
+                const ultimaLida = localStorage.getItem('notif_lida_' + usuarioAtual.user) || 0;
+
+                // Se tiver alerta novo, acende a bolinha vermelha!
+                if (window.ultimoIdNotificacao > ultimaLida) {
+                    document.getElementById('badge-notif').style.display = 'flex';
+                }
+
+                // Monta os cards
+                painel.innerHTML = alertas.map(a => {
+                    const dataFormatada = new Date(a.data_criacao).toLocaleString('pt-BR');
+                    return `
+                        <div class="notif-card">
+                            <div class="icone"><i class="${a.icone}"></i></div>
+                            <div>
+                                <h4>${a.titulo}</h4>
+                                <p>${a.mensagem}</p>
+                                <span class="data">${dataFormatada}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) { console.log("Erro ao carregar notificações"); }
+        }
+
+        // --- LÓGICAS DO DASHBOARD ---
         async function carregarEstatisticas() {
             try {
                 const res = await fetch('/api/stats');
@@ -333,7 +331,7 @@
                 document.getElementById('stat-pendentes').innerText = stats.pendentes;
                 document.getElementById('stat-membros').innerText = stats.membros;
                 document.getElementById('stat-proximo').innerText = stats.proximoEvento;
-            } catch (e) { console.log("Erro ao carregar estatísticas."); }
+            } catch (e) {}
         }
 
         function mudarAbaChat(tipo) {
@@ -352,75 +350,30 @@
 
                 caixa.innerHTML = mensagens.map(m => {
                     const isMinha = m.usuario === usuarioAtual.user;
-                    return `
-                        <div class="msg ${isMinha ? 'me' : 'other'}">
-                            ${!isMinha ? `<div class="msg-author">${m.usuario}</div>` : ''}
-                            <div class="msg-content">${m.mensagem}</div>
-                        </div>
-                    `;
+                    return `<div class="msg ${isMinha ? 'me' : 'other'}">${!isMinha ? `<div class="msg-author">${m.usuario}</div>` : ''}<div class="msg-content">${m.mensagem}</div></div>`;
                 }).join('');
 
                 if (estavaNoFinal) caixa.scrollTop = caixa.scrollHeight;
-            } catch (err) { console.error("Erro ao atualizar chat", err); }
+            } catch (err) {}
         }
 
         async function enviarMensagemChat() {
             const input = document.getElementById('input-mensagem');
             const texto = input.value.trim();
             if (!texto) return;
-
             input.value = '';
-            
-            try {
-                await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuarioAtual.user,
-                        mensagem: texto,
-                        tipo: canalChatAtual
-                    })
-                });
-                carregarMensagensChat();
-            } catch (err) {
-                mostrarToast("Erro ao enviar mensagem.", "error");
-            }
-        }
-
-        const firebaseConfig = { apiKey: "AIzaSyC63gBQ7JdRTnNCpSpir1brYH754fcKq9M", authDomain: "csc-live-bh.firebaseapp.com", projectId: "csc-live-bh", storageBucket: "csc-live-bh.firebasestorage.app", messagingSenderId: "345272283586", appId: "1:345272283586:web:648c1fb52622792406665b" };
-        firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
-
-        async function solicitarPermissaoNotificacao() {
-            try {
-                if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-                    mostrarToast("Seu navegador não suporta notificações nativas.", "error"); return;
-                }
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    mostrarToast("Registrando dispositivo...", "warning");
-                    const registration = await navigator.serviceWorker.register('/public/firebase-messaging-sw.js');
-                    const token = await messaging.getToken({ vapidKey: "BPTDa4CAuMAEo9BM4BHPBuTLqEeWwTFD6Q6f0jnLOFB_8RY3pQ2c_TY255TahvJByUf11JU8eXUw3cmq2C6fSyc", serviceWorkerRegistration: registration });
-                    if (token) {
-                        await fetch('/api/push-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user, token: token }) });
-                        mostrarToast("Notificações ativadas com sucesso!", "success");
-                        document.getElementById('btn-sino').style.display = 'none';
-                    }
-                }
-            } catch (error) { mostrarToast("Falha técnica: " + error.message, "error"); }
+            try { await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user, mensagem: texto, tipo: canalChatAtual }) }); carregarMensagensChat(); } catch (err) {}
         }
 
         async function dispararAvisoManual() {
             const titulo = document.getElementById('push-titulo').value;
             const mensagem = document.getElementById('push-msg').value;
-            if(!titulo || !mensagem) return mostrarToast("Preencha todos os campos.", "warning");
+            if(!titulo || !mensagem) return alert("Preencha todos os campos.");
             document.querySelector('.btn-enviar-push').innerText = "Enviando...";
             await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titulo, mensagem }) });
-            mostrarToast("Aviso enviado com sucesso!", "success");
             document.getElementById('modal-megafone').style.display = 'none';
             document.querySelector('.btn-enviar-push').innerText = "Disparar Notificação";
-            document.getElementById('push-titulo').value = '';
-            document.getElementById('push-msg').value = '';
+            verificarNovasNotificacoes(); // Força a bolinha a aparecer na hora para o Admin
         }
     </script>
 </body>
