@@ -10,7 +10,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background-color: #121220; color: #fff; padding-bottom: 30px; overflow-x: hidden; }
         
-        /* CABEÇALHO COMPACTO */
         .app-header { display: flex; align-items: center; padding: 15px 20px; background-color: #16213e; box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: sticky; top: 0; z-index: 100; gap: 15px; }
         .btn-voltar { color: #a2a2bd; text-decoration: none; font-size: 20px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.05); transition: 0.3s;}
         .btn-voltar:active { transform: scale(0.9); }
@@ -18,7 +17,6 @@
 
         .main-container { max-width: 1100px; margin: 20px auto 0; padding: 0 15px; }
 
-        /* PAINEL ADMIN OTIMIZADO */
         .admin-panel { background: #16213e; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); display: none; }
         .panel-heading { font-size: 13px; color: #a2a2bd; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
         
@@ -40,7 +38,6 @@
         .btn-print { background: #6f42c1; }
         .btn-delete { background: rgba(220, 53, 69, 0.1); color: #dc3545 !important; border: 1px solid #dc3545 !important; grid-column: span 2; display: none;}
 
-        /* TABELA E ÁREA DE CONTEÚDO */
         .content-card { background: #fff; padding: 20px; border-radius: 16px; color: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         #titulo-mes { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; font-size: 18px; text-align: center; text-transform: uppercase;}
         
@@ -55,7 +52,6 @@
         .btn-del-row { background: transparent; color: #dc3545; border: none; font-size: 20px; cursor: pointer; transition: 0.3s; }
         .btn-del-row:active { transform: scale(0.8); }
 
-        /* CORES DAS EQUIPES */
         .bg-A { background-color: #FF3B30 !important; color: white; } 
         .bg-B { background-color: #007AFF !important; color: white; } 
         .bg-C { background-color: #FFCC00 !important; color: black; } 
@@ -68,7 +64,6 @@
         .mista-checkboxes { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; font-size: 11px; }
         .mista-checkboxes label { background: #f0f0f0; padding: 6px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; color: #000; }
         
-        /* TOAST & MODAL */
         #toast-container { position: fixed; top: 80px; right: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;}
         .toast { background: #fff; color: #333; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 12px; border-left: 5px solid #e94560; animation: slideIn 0.3s forwards; font-weight: bold; font-size: 14px; pointer-events: all;}
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -78,7 +73,6 @@
         .modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
         .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: #fff;}
 
-        /* REGRAS EXCLUSIVAS PARA CELULAR */
         @media (max-width: 768px) {
             .compact-row { flex-direction: column; align-items: stretch; }
             .compact-row input, .compact-row select { width: 100%; }
@@ -88,7 +82,6 @@
             #dia-extra { max-width: 100% !important; }
         }
 
-        /* MÁGICA DA IMPRESSÃO (PÁGINA ÚNICA) */
         @media print {
             @page { size: A4 portrait; margin: 10mm; }
             body { background: white; padding: 0; zoom: 0.90; overflow: visible;} 
@@ -97,7 +90,7 @@
             .table-responsive { overflow-x: visible; }
             table { width: 100%; font-size: 10px !important; margin-top: 5px; min-width: auto;}
             th, td { padding: 4px !important; border: 1px solid #000; }
-            .col-acao, #th-acao { display: none !important; } /* Esconde o botão de excluir na impressão */
+            .col-acao, #th-acao { display: none !important; }
             select { appearance: none; border: none; background: transparent !important; color: inherit; font-size: 10px; font-weight: bold;}
             textarea { border: none; outline: none; resize: none; overflow: hidden; font-size: 11px; margin-top: 5px; padding: 0;}
             #feriados-lista, #aniversarios-lista { font-size: 10px; margin-top: 5px; }
@@ -184,11 +177,11 @@
     </div>
 
     <script>
-        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO", "CARLOS RODRIGUES"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI", "JOSÉ", "VICTOR"] };
+        const equipesDB = { "A": ["CARLOS", "AUGUSTO", "DANIEL"], "B": ["SÉRGIO", "DAVI", "BENVINDO"], "C": ["WALLERSON", "WALLYSON", "JOSÉ", "EDUARDO", "MATEUS"], "D": ["LUIZ", "JUNINHO"], "E": ["MARCOS", "BINHO", "RODRIGO BOTELHO", "VICTOR"], "F": ["PISKE", "ISABELA", "PETERSON"], "G": ["JUNINHO", "AUGUSTO", "DAVI"] };
         const feriados2026 = { "0-1": "Confraternização Universal", "1-17": "Carnaval", "3-3": "Sexta-feira Santa", "3-5": "Páscoa", "3-21": "Tiradentes", "4-1": "Dia do Trabalho", "5-4": "Corpus Christi", "8-7": "Independência", "9-12": "Nossa Sra Aparecida", "10-2": "Finados", "10-15": "Proclamação da República", "11-25": "Natal" };
 
         let usuarioAtual = null;
-        let isEdicao = false; // Controle para saber qual mensagem exibir ao salvar
+        let isEdicao = false; 
 
         function mostrarToast(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -200,11 +193,24 @@
             setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 3500);
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             const userStore = localStorage.getItem('usuarioLogado');
             if (!userStore) return window.location.href = '/';
             usuarioAtual = JSON.parse(userStore);
 
+            // AQUI ESTÁ O CÃO DE GUARDA BEM APLICADO
+            try {
+                const reqSessao = await fetch('/api/verificar-sessao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioAtual.user }) });
+                const resSessao = await reqSessao.json();
+                if (!resSessao.ativo) {
+                    localStorage.clear(); 
+                    alert("Acesso Revogado pela Administração."); 
+                    window.location.href = '/'; 
+                    return;
+                }
+            } catch (e) { console.log("Permitindo acesso offline temporário."); }
+
+            // AGORA AS TELAS CARREGAM NORMALMENTE
             if (usuarioAtual.perfil === 'ADMIN') {
                 document.getElementById('painel-admin').style.display = 'block';
                 document.getElementById('mesAno').value = getMesAtual();
@@ -214,21 +220,6 @@
                 document.getElementById('obs-geral').setAttribute('readonly', 'true');
                 buscarEscalaSalva();
             }
-
-            // O CÃO DE GUARDA: Verifica no banco se o usuário não foi bloqueado recentemente
-            try {
-                const reqSessao = await fetch('/api/verificar-sessao', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: usuarioAtual.user })
-                });
-                const resSessao = await reqSessao.json();
-                if (!resSessao.ativo) {
-                    localStorage.clear();
-                    alert("Seu acesso foi revogado pela administração.");
-                    window.location.href = '/';
-                    return;
-                }
-            } catch (e) { console.log("Verificação falhou, permitindo acesso offline."); }
         };
 
         function getMesAtual() {
@@ -251,8 +242,8 @@
             const val = document.getElementById('mesAno').value;
             if(!val) return mostrarToast("Selecione o mês.", "warning");
             
-            isEdicao = false; // Define como uma escala Nova
-            document.getElementById('th-acao').style.display = 'table-cell'; // Mostra a coluna de Excluir
+            isEdicao = false; 
+            document.getElementById('th-acao').style.display = 'table-cell'; 
             
             const [ano, mes] = val.split('-').map(Number);
             document.getElementById('titulo-mes').innerText = `${new Date(ano, mes-1).toLocaleString('pt-br', {month: 'long'}).toUpperCase()} / ${ano}`;
@@ -273,7 +264,6 @@
             const tr = document.createElement('tr');
             let opts = '<option value="">---</option>'; 
             
-            // Agora o dropdown mostra: EQUIPE A (CARLOS)
             for(let e in equipesDB) {
                 opts += `<option value="${e}">EQUIPE ${e} (${equipesDB[e][0]})</option>`;
             }
@@ -318,8 +308,8 @@
                 const res = await fetch(`/api/escalas/${mesAno}`);
                 const result = await res.json();
                 if (result.sucesso) {
-                    isEdicao = true; // Define como uma escala Sendo Editada
-                    document.getElementById('th-acao').style.display = 'table-cell'; // Mostra a coluna de Excluir
+                    isEdicao = true; 
+                    document.getElementById('th-acao').style.display = 'table-cell'; 
                     
                     const dados = result.dados;
                     document.getElementById('titulo-mes').innerText = dados.titulo;
@@ -358,13 +348,11 @@
 
         function destravarMista(btn) {
             const tr = btn.closest('tr');
-            
             let optsHtml = `<option value="">---</option>`;
             for(let e in equipesDB) {
                 optsHtml += `<option value="${e}">EQUIPE ${e} (${equipesDB[e][0]})</option>`;
             }
             optsHtml += `<option value="MISTA" selected>ESCALA MISTA</option>`;
-            
             tr.cells[2].innerHTML = `<select class="select-equipe" onchange="tratarSelecaoEquipe(this)">${optsHtml}</select>`;
             tratarSelecaoEquipe(tr.querySelector('.select-equipe'));
         }
@@ -417,7 +405,7 @@
                         mostrarToast(msgFinal, "success"); 
                     }
                     document.getElementById('btn-excluir-admin').style.display = 'block'; 
-                    isEdicao = true; // Após salvar, o documento atual passa a ser uma edição
+                    isEdicao = true; 
                     return true;
                 }
             } catch (err) { mostrarToast("Erro ao salvar no banco.", "error"); return false; }
@@ -458,7 +446,7 @@
                 const response = await fetch(`/api/escalas/${mesAno}`);
                 const result = await response.json();
                 if (result.sucesso) {
-                    document.getElementById('th-acao').style.display = 'none'; // Esconde a coluna de Ação na visualização
+                    document.getElementById('th-acao').style.display = 'none'; 
                     
                     const dados = result.dados;
                     document.getElementById('titulo-mes').innerText = dados.titulo;
