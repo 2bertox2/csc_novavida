@@ -308,6 +308,22 @@
             carregarEstatisticas();
             carregarMensagensChat();
             chatIntervalo = setInterval(carregarMensagensChat, 3000);
+
+            // O CÃO DE GUARDA: Verifica no banco se o usuário não foi bloqueado recentemente
+            try {
+                const reqSessao = await fetch('/api/verificar-sessao', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: usuarioAtual.user })
+                });
+                const resSessao = await reqSessao.json();
+                if (!resSessao.ativo) {
+                    localStorage.clear();
+                    alert("Seu acesso foi revogado pela administração.");
+                    window.location.href = '/';
+                    return;
+                }
+            } catch (e) { console.log("Verificação falhou, permitindo acesso offline."); }
+            
         };
 
         async function carregarEstatisticas() {
