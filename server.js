@@ -51,6 +51,7 @@ async function setupDatabase() {
                 requerente TEXT,
                 atribuido TEXT DEFAULT '-',
                 descricao TEXT,
+                link_drive TEXT DEFAULT '',
                 data_abertura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 progresso INTEGER DEFAULT 0
             )
@@ -62,7 +63,8 @@ async function setupDatabase() {
                 nome_usuario TEXT UNIQUE,
                 senha TEXT,
                 perfil TEXT,
-                equipe TEXT
+                equipe TEXT,
+                status TEXT DEFAULT 'ATIVO'
             )
         `);
 
@@ -92,11 +94,6 @@ async function setupDatabase() {
                 data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-
-        // 🔥 AUTO-REPARO DE BANCO DE DADOS (MIGRATION) 🔥
-        // Força a injeção das colunas novas nas tabelas velhas sem apagar dados
-        try { await pool.query("ALTER TABLE usuarios ADD COLUMN status TEXT DEFAULT 'ATIVO'"); console.log("✔️ Coluna 'status' injetada."); } catch(e){}
-        try { await pool.query("ALTER TABLE chamados ADD COLUMN link_drive TEXT DEFAULT ''"); console.log("✔️ Coluna 'link_drive' injetada."); } catch(e){}
 
         console.log("✅ Tabelas e Conexão com o Banco de Dados estabelecidas.");
     } catch (err) {
@@ -180,25 +177,37 @@ app.get('/api/stats', async (req, res) => {
     } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// --- ROTAS DE LOGIN E USUÁRIOS ---
+// --- ROTAS DE LOGIN, VERIFICAÇÃO E USUÁRIOS ---
 app.post('/api/login', async (req, res) => {
     const { usuario, senha } = req.body;
     try {
         const result = await pool.query('SELECT id, nome_usuario as user, perfil, equipe, status FROM usuarios WHERE nome_usuario = $1 AND senha = $2', [usuario, senha]);
         if (result.rows.length > 0) {
             const userDb = result.rows[0];
-            
             if (userDb.status === 'BLOQUEADO') {
                 return res.status(403).json({ sucesso: false, mensagem: "Acesso bloqueado. Entre em contato com a Liderança." });
             }
-            
             res.json({ sucesso: true, usuario: userDb });
         } else {
             res.status(401).json({ sucesso: false, mensagem: "Credenciais inválidas." });
         }
     } catch (err) { 
-        // 🚨 Correção Crítica do undefined: O frontend espera "mensagem", e não "erro"
         res.status(500).json({ sucesso: false, mensagem: "Erro no servidor de dados: " + err.message }); 
+    }
+});
+
+// 🔥 NOVA ROTA DE SEGURANÇA: VERIFICAÇÃO CONTÍNUA DE SESSÃO 🔥
+app.post('/api/verificar-sessao', async (req, res) => {
+    const { usuario } = req.body;
+    try {
+        const result = await pool.query("SELECT status FROM usuarios WHERE nome_usuario = $1", [usuario]);
+        if (result.rows.length > 0 && result.rows[0].status === 'ATIVO') {
+            res.json({ ativo: true });
+        } else {
+            res.json({ ativo: false }); // Usuário não existe mais ou foi BLOQUEADO
+        }
+    } catch (e) { 
+        res.status(500).json({ ativo: false }); 
     }
 });
 
